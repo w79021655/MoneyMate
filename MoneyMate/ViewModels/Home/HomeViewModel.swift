@@ -22,27 +22,33 @@ final class HomeViewModel: ObservableObject {
     @Published var monthlyBalance: Int = 0
 
     var monthlyDetailText: String {
-        ["支出：-",
+        ["支出：",
          monthlyExpense.string,
          "收入：",
          monthlyIncome.string].joinedString()
     }
-    
+
+    var currentMonthTitle: String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM"
+        return "\(formatter.string(from: Date())) 結餘"
+    }
+
     func configureIfNeeded(context: ModelContext) {
+//        var expenseEditorViewModel = ExpenseEditorViewModel()
+//        expenseEditorViewModel.configureIfNeeded(context: context)
+//        expenseEditorViewModel.insertMockExpenses()
+
         guard repository == nil else { return }
         repository = ExpenseRepository(context: context)
         fetchMonthlySummary(for: Date())
     }
 
     func fetchMonthlySummary(for date: Date) {
-//        let range = calendar.dateInterval(of: .month, for: date)!
-//        guard let expenses = repository?.fetchExpenses(from: range.start, to: range.end) else { return }
+        guard let expenses = repository?.fetchExpenses(from: date) else { return }
 
-//        let income = expenses.filter { $0.amount > 0 }.map(\.amount).reduce(0, +)
-//        let expense = expenses.filter { $0.amount < 0 }.map(\.amount).reduce(0, +)
-
-        let income = 70000
-        let expense = 700
+        let income = expenses.filter { $0.amount > 0 }.map(\.amount).reduce(0, +)
+        let expense = expenses.filter { $0.amount < 0 }.map(\.amount).reduce(0, +)
 
         monthlyIncome = income
         monthlyExpense = expense

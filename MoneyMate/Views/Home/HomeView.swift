@@ -10,12 +10,12 @@ import SwiftUI
 struct HomeView: View {
     @Environment(\.modelContext) private var context
     @StateObject private var homeViewModel = HomeViewModel()
-    @StateObject private var expenseEditorViewModel = ExpenseEditorViewModel()
+
     var body: some View {
         ScrollView {
             VStack(spacing: 0) {
                 HomeHeaderView(
-                    dateTitle: "2025-05 結餘",
+                    dateTitle: homeViewModel.currentMonthTitle,
                     balance: "\(homeViewModel.monthlyBalance)",
                     detailText: homeViewModel.monthlyDetailText
                 )
@@ -34,7 +34,6 @@ struct HomeView: View {
         .ignoresSafeArea(.container, edges: .top)
         .onAppear {
             homeViewModel.configureIfNeeded(context: context)
-            expenseEditorViewModel.configureIfNeeded(context: context)
         }
     }
 }

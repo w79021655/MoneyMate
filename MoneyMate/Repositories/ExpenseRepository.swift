@@ -19,7 +19,7 @@ final class ExpenseRepository {
         dataProviderHelper.insert(expense, into: context)
     }
 
-    func fetchExpenses(from startDate: Date, to endDate: Date) -> [Expense] {
+    func fetchExpenses(from startDate: Date) -> [Expense] {
         dataProviderHelper.fetchThisMonth(from: context, startDate: startDate)
     }
 }

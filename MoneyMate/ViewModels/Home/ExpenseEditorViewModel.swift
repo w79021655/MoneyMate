@@ -35,4 +35,23 @@ class ExpenseEditorViewModel: ObservableObject {
 
         repository?.addExpense(newExpense)
     }
+
+    func insertMockExpenses() {
+        let today = Date()
+
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
+        print(formatter.string(from: today))
+
+        let samples = [
+            Expense(amount: -1200, category: .transport, date: today, dateTime: today, remark: "捷運悠遊卡"),
+            Expense(amount: -350, category: .dining, date: today, dateTime: today, remark: "午餐便當"),
+            Expense(amount: -900, category: .entertainment, date: today, dateTime: today, remark: "電影票"),
+            Expense(amount: 3000, category: .salary, date: today, dateTime: today, remark: "接案收入"),
+        ]
+
+        for item in samples {
+            repository?.addExpense(item)
+        }
+    }
 }
