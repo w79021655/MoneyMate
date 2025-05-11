@@ -17,20 +17,21 @@ struct HomeView: View {
                 HomeHeaderView(
                     dateTitle: homeViewModel.currentMonthTitle,
                     balance: "\(homeViewModel.monthlyBalance)",
-                    detailText: homeViewModel.monthlyDetailText
+                    income: homeViewModel.incomeText,
+                    expenditure: homeViewModel.expenditureText
                 )
-                .background(Color.white)
+                .background(Color.Background.screen)
                 ForEach(0..<50) { i in
                     Text("支出項目 \(i)")
                         .padding()
                         .frame(maxWidth: .infinity)
-                        .background(Color.white)
-                        .foregroundColor(.red)
-                        .border(Color.gray.opacity(0.3))
+                        .background(Color.Background.card)
+                        .foregroundColor(Color.Text.negative)
+                        .border(Color.Brand.subtleRGB)
                 }
             }
         }
-        .background(Color(UIColor.systemGroupedBackground))
+        .background(Color.Background.screen)
         .ignoresSafeArea(.container, edges: .top)
         .onAppear {
             homeViewModel.configureIfNeeded(context: context)
@@ -38,6 +39,6 @@ struct HomeView: View {
     }
 }
 
-//#Preview {
-//    HomeView()
-//}
+#Preview {
+    HomeView()
+}

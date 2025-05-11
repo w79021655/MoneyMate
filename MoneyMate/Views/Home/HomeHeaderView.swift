@@ -10,36 +10,58 @@ import SwiftUI
 struct HomeHeaderView: View {
     let dateTitle: String
     let balance: String
-    let detailText: String
+    let income: String
+    let expenditure: String
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 15) {
-            VerticalSpacer(height: 40)
+        VStack(alignment: .leading,
+               spacing: Spacing.spacing16) {
+            VerticalSpacer(width: 0, height: 40)
             Text(dateTitle)
-                .font(.caption)
+                .font(Font.labelSmall)
             Text(balance)
-                .font(.largeTitle).bold()
-            Text(detailText)
-                .font(.subheadline)
+                .font(Font.displayLarge)
+            incomeExpenditure
         }
         .padding(EdgeInsets(
-            top: 15,
-            leading: 12,
-            bottom: 15,
+            top: Spacing.spacing16,
+            leading: Spacing.spacing12,
+            bottom: Spacing.spacing16,
             trailing: 0
         ))
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color.blue)
+        .background(Color.Brand.primary)
         .clipShape(
             RoundedCorner(
-                radius: 12,
+                radius: Radius.radius12,
                 corners: [
                     .bottomLeft,
                     .bottomRight
                 ]
             )
         )
-        .foregroundColor(.white)
+        .foregroundColor(Color.Text.inverse)
+    }
+
+    var incomeExpenditure: some View {
+        HStack {
+            Text(income)
+            VerticalSpacer(width: 15, height: 0)
+            Text(expenditure)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(Color.Brand.primary)
+        .clipShape(
+            RoundedCorner(
+                radius: Radius.radius12,
+                corners: [
+                    .bottomLeft,
+                    .bottomRight
+                ]
+            )
+        )
+        .foregroundColor(Color.Text.inverse)
+        .font(Font.labelLarge)
     }
 }
 
@@ -57,10 +79,11 @@ struct RoundedCorner: Shape {
     }
 }
 
-//#Preview {
-//    HomeHeaderView(
-//        dateTitle: "2025-05 結餘",
-//        balance: "-700",
-//        detailText: "支出：-700    收入：0"
-//    )
-//}
+#Preview {
+    HomeHeaderView(
+        dateTitle: "2025-05 結餘",
+        balance: "-700",
+        income: "收入：0",
+        expenditure: "支出：-700"
+    )
+}

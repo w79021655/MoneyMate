@@ -8,10 +8,11 @@
 import SwiftUI
 
 struct VerticalSpacer: View {
+    let width: CGFloat
     let height: CGFloat
 
     var body: some View {
         Spacer()
-            .frame(height: height)
+            .frame(width: width, height: height)
     }
 }

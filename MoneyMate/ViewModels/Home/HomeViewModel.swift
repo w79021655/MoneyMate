@@ -21,13 +21,14 @@ final class HomeViewModel: ObservableObject {
     /// 每月餘額
     @Published var monthlyBalance: Int = 0
 
-    var monthlyDetailText: String {
-        ["支出：",
-         monthlyExpense.string,
-         "收入：",
-         monthlyIncome.string].joinedString()
+    var incomeText: String {
+        ["收入：", monthlyIncome.string].joinedString()
     }
 
+    var expenditureText: String {
+        ["支出：", monthlyExpense.string].joinedString()
+    }
+    
     var currentMonthTitle: String {
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM"
