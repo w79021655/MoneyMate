@@ -16,22 +16,24 @@ extension Color {
     }
 
     enum Text {
-        static let `default` = Color(hex: "#333333")
-        static let inverse = Color(hex: "#FFFFFF")
-        static let negative = Color(hex: "#E53935")
+        static let primaryDark = Color(hex: "#000000")   // 主文字的黑深色
+        static let secondary = Color(hex: "#999999") // 次要主要文字
+        static let inverse = Color(hex: "#FFFFFF") // 反白
+        static let negative = Color(hex: "#E53935") // 支出用紅色
     }
 
     enum Background {
-        static let card = Color(hex: "#FAFAFA")
-        static let screen = Color(hex: "#FFFFFF")
+        static let card = Color(hex: "#FFFFFF")
+        static let screen = Color(hex: "#F5F5F5")
     }
 
     enum Border {
+        static let loading = Color(hex: "#2196F3")
         static let subtle = Color(hex: "#E0E0E0")
     }
 
     enum Shadow {
-        static let card = Color.black.opacity(0.05)
+        static let card = Color.black.opacity(0.03)
     }
 
     enum Fill {

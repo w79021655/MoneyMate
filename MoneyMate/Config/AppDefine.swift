@@ -6,3 +6,5 @@
 //
 
 let dataProviderHelper = DataProviderHelper.shared
+let modelContextProvider = ModelContextProvider.shared
+let dateHelper = DateHelper.shared

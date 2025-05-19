@@ -9,17 +9,16 @@ import Foundation
 import SwiftData
 
 final class ExpenseRepository {
-    private let context: ModelContext
-
-    init(context: ModelContext) {
-        self.context = context
-    }
-
     func addExpense(_ expense: Expense) {
-        dataProviderHelper.insert(expense, into: context)
+        dataProviderHelper.insert(expense)
     }
 
+    func deleteAll() {
+        dataProviderHelper.deleteAll(of: Expense.self)
+    }
+
+    /// 取得指定起始日期往後抓取指定 20 筆數的資料
     func fetchExpenses(from startDate: Date) -> [Expense] {
-        dataProviderHelper.fetchThisMonth(from: context, startDate: startDate)
+        dataProviderHelper.fetchPaginatedAfterDate(startDate: startDate)
     }
 }

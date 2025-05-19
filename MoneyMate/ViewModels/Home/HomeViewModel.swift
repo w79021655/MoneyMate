@@ -9,8 +9,10 @@ import Foundation
 import SwiftData
 
 final class HomeViewModel: ObservableObject {
-    private var repository: ExpenseRepository?
-    private let calendar = Calendar.current
+    private var useCase = HomeUseCase()
+
+    /// 紀錄該頁是否滿足20筆資料
+    private var limitExpenses: [Expense] = []
 
     /// 每月收入
     @Published var monthlyIncome: Int = 0
@@ -20,6 +22,15 @@ final class HomeViewModel: ObservableObject {
 
     /// 每月餘額
     @Published var monthlyBalance: Int = 0
+
+    /// 每月收入支出清單
+    @Published var expenses: [Expense] = []
+
+    /// 是否顯示加載動畫
+    @Published var isLoadingNextPage: Bool = false
+
+    /// 強制刷新 ProgressView 的 ID
+    @Published var progressID = UUID()
 
     var incomeText: String {
         ["收入：", monthlyIncome.string].joinedString()
@@ -35,24 +46,43 @@ final class HomeViewModel: ObservableObject {
         return "\(formatter.string(from: Date())) 結餘"
     }
 
-    func configureIfNeeded(context: ModelContext) {
-//        var expenseEditorViewModel = ExpenseEditorViewModel()
-//        expenseEditorViewModel.configureIfNeeded(context: context)
+    /// 回傳每月統計結果
+    func fetchMonthlySummary(for date: Date) {
+//        let expenseEditorViewModel = ExpenseEditorViewModel()
+//        expenseEditorViewModel.deleteAll()
 //        expenseEditorViewModel.insertMockExpenses()
 
-        guard repository == nil else { return }
-        repository = ExpenseRepository(context: context)
-        fetchMonthlySummary(for: Date())
+        let result = useCase.fetchMonthlySummary(for: date)
+        monthlyIncome = result.income
+        monthlyExpense = result.expense
+        monthlyBalance = result.balance
     }
 
-    func fetchMonthlySummary(for date: Date) {
-        guard let expenses = repository?.fetchExpenses(from: date) else { return }
+    /// 取得指定起始日期往後抓取指定 20 筆數的資料
+    func fetchMonthlyExpense(for date: Date) {
+        let expenses = useCase.fetchMonthlyExpense(for: date)
+        self.expenses = expenses
+        limitExpenses = expenses
+    }
 
-        let income = expenses.filter { $0.amount > 0 }.map(\.amount).reduce(0, +)
-        let expense = expenses.filter { $0.amount < 0 }.map(\.amount).reduce(0, +)
+    /// 載入下一頁
+    func loadNextPageIfNeeded() {
+        guard !isLoadingNextPage,
+              !expenses.isEmpty,
+              limitExpenses.count >= 20 else { return }
 
-        monthlyIncome = income
-        monthlyExpense = expense
-        monthlyBalance = income + expense
+        progressID = UUID()
+        isLoadingNextPage = true
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            let lastDate = self.expenses[self.expenses.count - 1].date
+            let nextPage = self.useCase.fetchMonthlyExpense(for: lastDate)
+            let newItems = nextPage.filter { !self.expenses.contains($0) }
+            if !newItems.isEmpty {
+                self.expenses.append(contentsOf: newItems)
+                self.limitExpenses = newItems
+            }
+            self.isLoadingNextPage = false
+        }
     }
 }

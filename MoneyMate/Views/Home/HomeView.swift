@@ -12,29 +12,64 @@ struct HomeView: View {
     @StateObject private var homeViewModel = HomeViewModel()
 
     var body: some View {
-        ScrollView {
-            VStack(spacing: 0) {
-                HomeHeaderView(
-                    dateTitle: homeViewModel.currentMonthTitle,
-                    balance: "\(homeViewModel.monthlyBalance)",
-                    income: homeViewModel.incomeText,
-                    expenditure: homeViewModel.expenditureText
-                )
-                .background(Color.Background.screen)
-                ForEach(0..<50) { i in
-                    Text("支出項目 \(i)")
-                        .padding()
-                        .frame(maxWidth: .infinity)
-                        .background(Color.Background.card)
-                        .foregroundColor(Color.Text.negative)
-                        .border(Color.Brand.subtleRGB)
+        VStack {
+            HomeHeaderView(
+                dateTitle: homeViewModel.currentMonthTitle,
+                balance: "\(homeViewModel.monthlyBalance)",
+                income: homeViewModel.incomeText,
+                expenditure: homeViewModel.expenditureText
+            )
+
+            List {
+                ForEach(homeViewModel.expenses) { expense in
+                    TransactionRowView(
+                        icon: expense.category.systemImageName,
+                        iconColor: expense.category.color,
+                        title: expense.remark,
+                        date: expense.date,
+                        amount: expense.amount
+                    )
+                    .padding(.horizontal, 15)
+                    .padding(.top, expense == homeViewModel.expenses.first ? 16 : 12)
+                    .listRowInsets(EdgeInsets())
+                    .listRowSeparator(.hidden)
+                    .onAppear {
+                        if expense == homeViewModel.expenses.last {
+                            homeViewModel.loadNextPageIfNeeded()
+                        }
+                    }
                 }
+                .background(Color.Background.screen)
+                loadingRow
+            }
+            .listStyle(.plain)
+            .onAppear {
+                homeViewModel.fetchMonthlySummary(for: Date())
+                homeViewModel.fetchMonthlyExpense(for: Date())
             }
         }
         .background(Color.Background.screen)
         .ignoresSafeArea(.container, edges: .top)
         .onAppear {
-            homeViewModel.configureIfNeeded(context: context)
+            modelContextProvider.configure(context: context)
+        }
+    }
+
+    @ViewBuilder
+    var loadingRow: some View {
+        if homeViewModel.isLoadingNextPage {
+            HStack {
+                Spacer()
+                ProgressView()
+                    .id(homeViewModel.progressID)
+                    .tint(Color.Border.loading)
+                    .scaleEffect(1.2)
+                    .padding(.vertical, 20)
+                Spacer()
+            }
+            .listRowSeparator(.hidden)
+            .listRowInsets(EdgeInsets())
+            .listRowBackground(Color.clear)
         }
     }
 }
