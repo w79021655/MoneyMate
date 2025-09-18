@@ -12,7 +12,7 @@ import SwiftData
 struct MoneyMateApp: App {
     var body: some Scene {
         WindowGroup {
-            HomeView()
+            TabBarView()
         }
         .modelContainer(for: Expense.self) // 註冊資料模型
     }

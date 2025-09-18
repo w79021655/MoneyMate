@@ -8,8 +8,9 @@
 import Foundation
 import SwiftData
 
+@MainActor
 final class HomeViewModel: ObservableObject {
-    private var useCase = HomeUseCase()
+    private var useCase = HomeUseCase(repository: ExpenseRepository.init())
 
     /// 紀錄該頁是否滿足20筆資料
     private var limitExpenses: [Expense] = []
@@ -39,7 +40,7 @@ final class HomeViewModel: ObservableObject {
     var expenditureText: String {
         ["支出：", monthlyExpense.string].joinedString()
     }
-    
+
     var currentMonthTitle: String {
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM"
@@ -47,26 +48,22 @@ final class HomeViewModel: ObservableObject {
     }
 
     /// 回傳每月統計結果
-    func fetchMonthlySummary(for date: Date) {
-//        let expenseEditorViewModel = ExpenseEditorViewModel()
-//        expenseEditorViewModel.deleteAll()
-//        expenseEditorViewModel.insertMockExpenses()
-
-        let result = useCase.fetchMonthlySummary(for: date)
+    func fetchMonthlySummary(for date: Date) async {
+        let result = await useCase.fetchMonthlySummary(for: date)
         monthlyIncome = result.income
         monthlyExpense = result.expense
         monthlyBalance = result.balance
     }
 
     /// 取得指定起始日期往後抓取指定 20 筆數的資料
-    func fetchMonthlyExpense(for date: Date) {
-        let expenses = useCase.fetchMonthlyExpense(for: date)
+    func fetchMonthlyExpense(for date: Date) async {
+        let expenses = await useCase.fetchMonthlyExpense(for: date)
         self.expenses = expenses
         limitExpenses = expenses
     }
 
     /// 載入下一頁
-    func loadNextPageIfNeeded() {
+    func loadNextPageIfNeeded() async {
         guard !isLoadingNextPage,
               !expenses.isEmpty,
               limitExpenses.count >= 20 else { return }
@@ -74,15 +71,23 @@ final class HomeViewModel: ObservableObject {
         progressID = UUID()
         isLoadingNextPage = true
 
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+        do {
+            try await Task.sleep(nanoseconds: 500_000_000)
+
             let lastDate = self.expenses[self.expenses.count - 1].date
-            let nextPage = self.useCase.fetchMonthlyExpense(for: lastDate)
+            let nextPage = await self.useCase.fetchMonthlyExpense(for: lastDate)
             let newItems = nextPage.filter { !self.expenses.contains($0) }
             if !newItems.isEmpty {
                 self.expenses.append(contentsOf: newItems)
                 self.limitExpenses = newItems
             }
             self.isLoadingNextPage = false
+        } catch {
+            self.isLoadingNextPage = false
         }
+    }
+
+    func addTestData() async {
+        await useCase.addTestData()
     }
 }

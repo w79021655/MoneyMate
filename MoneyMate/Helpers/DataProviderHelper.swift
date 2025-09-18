@@ -24,7 +24,7 @@ struct DataProviderHelper {
         predicate: Predicate<T>? = nil,
         sortBy: [SortDescriptor<T>] = [],
         limit: Int = 0
-    ) -> [T] {
+    ) async -> [T] {
         var descriptor = FetchDescriptor<T>(
             predicate: predicate,
             sortBy: sortBy
@@ -39,22 +39,22 @@ struct DataProviderHelper {
     /// 將模型資料插入至指定的 context
     /// - Parameters:
     ///   - model: 欲插入的 PersistentModel 實例
-    func insert<T: PersistentModel>(_ model: T) {
+    func insert<T: PersistentModel>(_ model: T) async {
         modelContextProvider.context.insert(model)
     }
 
     /// 從指定 context 中刪除特定模型實例
     /// - Parameters:
     ///   - model: 欲刪除的 PersistentModel 實例
-    func delete<T: PersistentModel>(_ model: T) {
+    func delete<T: PersistentModel>(_ model: T) async {
         modelContextProvider.context.delete(model)
     }
 
     /// 刪除某類型的所有資料
     /// - Parameters:
     ///   - type: 資料模型類型
-    func deleteAll<T: PersistentModel>(of type: T.Type) {
-        let allItems = fetch() as [T]
+    func deleteAll<T: PersistentModel>(of type: T.Type) async {
+        let allItems = await fetch() as [T]
         for item in allItems {
             modelContextProvider.context.delete(item)
         }
@@ -65,7 +65,7 @@ struct DataProviderHelper {
     ///   - type: 資料模型類型
     ///   - id: 模型的 PersistentIdentifier
     func deleteById<T: PersistentModel>(_ type: T.Type,
-                                        id: PersistentIdentifier) {
+                                        id: PersistentIdentifier) async {
         guard let item = modelContextProvider.context.model(for: id) as? T else { return }
         modelContextProvider.context.delete(item)
     }
@@ -77,12 +77,12 @@ extension DataProviderHelper {
     /// - Parameters:
     ///   - startDate: 所屬查詢月份的日期（任何該月內的日期皆可）。
     /// - Returns: 符合該月份的資料集合。
-    func fetchThisMonth<T: PersistentModel & DateRepresentable>(startDate: Date) -> [T] {
+    func fetchThisMonth<T: PersistentModel & DateRepresentable>(startDate: Date) async -> [T] {
         let calendar = Calendar.current
         guard let range = calendar.dateInterval(of: .month, for: startDate) else { return [] }
         let predicate = #Predicate<T> { $0.date >= range.start && $0.date < range.end }
         let sort = [SortDescriptor(\T.date, order: .reverse)]
-        return fetch(predicate: predicate, sortBy: sort)
+        return await fetch(predicate: predicate, sortBy: sort)
     }
 
 
@@ -94,9 +94,11 @@ extension DataProviderHelper {
     func fetchPaginatedAfterDate<T: PersistentModel & DateRepresentable>(
         startDate: Date,
         limit: Int = 20
-    ) -> [T] {
-        let predicate = #Predicate<T> { $0.date < startDate }
+    ) async -> [T] {
+        let predicate = #Predicate<T> {
+            $0.date < startDate
+        }
         let sort = [SortDescriptor(\T.date, order: .reverse)]
-        return fetch(predicate: predicate, sortBy: sort, limit: limit)
+        return await fetch(predicate: predicate, sortBy: sort, limit: limit)
     }
 }

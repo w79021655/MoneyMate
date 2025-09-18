@@ -5,6 +5,22 @@
 //  Created by 吳駿 on 2025/5/4.
 //
 
+import Foundation
+
+// MARK: General Extension
+
+extension Array {
+
+    /// 回傳一個空陣列。
+    static var empty: Self { [] }
+
+    /// 是否為非空陣列。
+    var isNotEmpty: Bool { !self.isEmpty }
+
+    /// 將陣列轉換為 JSON 格式的 `Data`。
+    var data: Data? { try? JSONSerialization.data(withJSONObject: self, options: .prettyPrinted) }
+}
+
 // MARK: String-Specific Extension
 
 extension Array where Element == String {

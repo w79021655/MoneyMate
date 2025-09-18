@@ -20,13 +20,12 @@ struct MoneyMateTests {
 
         // 建立 ViewModel 並注入 context
         let viewModel = ExpenseEditorViewModel()
-        viewModel.configureIfNeeded(context: context)
-
+        
         // 執行插入假資料
         viewModel.insertMockExpenses()
 
         // 驗證是否寫入成功（你可以根據假資料的數量驗證）
-        let expenses: [Expense] = dataProviderHelper.fetchThisMonth(from: context, startDate: Date())
+        let expenses: [Expense] = dataProviderHelper.fetchThisMonth(startDate: Date())
 
         #expect(expenses.count == 4)
 

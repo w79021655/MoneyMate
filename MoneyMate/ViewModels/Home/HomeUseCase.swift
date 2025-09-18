@@ -9,11 +9,15 @@ import Foundation
 import SwiftData
 
 final class HomeUseCase {
-    private var repository = ExpenseRepository()
+    private var repository: ExpenseRepositoryProtocol
+
+    init(repository: ExpenseRepositoryProtocol) {
+        self.repository = repository
+    }
 
     /// 回傳每月統計結果
-    func fetchMonthlySummary(for date: Date) -> (income: Int, expense: Int, balance: Int) {
-        let expenses = repository.fetchExpenses(from: date)
+    func fetchMonthlySummary(for date: Date) async -> (income: Int, expense: Int, balance: Int) {
+        let expenses = await repository.fetchExpenses(from: date)
 
         let income = expenses.filter { $0.amount > 0 }.map(\.amount).reduce(0, +)
         let expense = expenses.filter { $0.amount < 0 }.map(\.amount).reduce(0, +)
@@ -23,8 +27,12 @@ final class HomeUseCase {
     }
 
     /// 取得指定起始日期往後抓取指定 20 筆數的資料
-    func fetchMonthlyExpense(for date: Date) -> [Expense] {
-        let expenses = repository.fetchExpenses(from: date)
+    func fetchMonthlyExpense(for date: Date) async -> [Expense] {
+        let expenses = await repository.fetchExpenses(from: date)
         return expenses
+    }
+
+    func addTestData() async {
+        await repository.addTestData()
     }
 }

@@ -20,32 +20,34 @@ struct HomeView: View {
                 expenditure: homeViewModel.expenditureText
             )
 
-            List {
-                ForEach(homeViewModel.expenses) { expense in
-                    TransactionRowView(
-                        icon: expense.category.systemImageName,
-                        iconColor: expense.category.color,
-                        title: expense.remark,
-                        date: expense.date,
-                        amount: expense.amount
-                    )
-                    .padding(.horizontal, 15)
-                    .padding(.top, expense == homeViewModel.expenses.first ? 16 : 12)
-                    .listRowInsets(EdgeInsets())
-                    .listRowSeparator(.hidden)
-                    .onAppear {
-                        if expense == homeViewModel.expenses.last {
-                            homeViewModel.loadNextPageIfNeeded()
+            TrackableScrollView {
+                LazyVStack {
+                    ForEach(homeViewModel.expenses) { expense in
+                        TransactionRowView(
+                            icon: expense.category.systemImageName,
+                            iconColor: expense.category.color,
+                            title: expense.remark,
+                            date: expense.date,
+                            amount: expense.amount
+                        )
+                        .padding(.horizontal, 15)
+                        .padding(.top, expense == homeViewModel.expenses.first ? 16 : 12)
+                        .listRowInsets(EdgeInsets())
+                        .listRowSeparator(.hidden)
+                        .task {
+                            if expense == homeViewModel.expenses.last {
+                                await homeViewModel.loadNextPageIfNeeded()
+                            }
                         }
                     }
+                    .background(Color.Background.screen)
+                    loadingRow
                 }
-                .background(Color.Background.screen)
-                loadingRow
-            }
-            .listStyle(.plain)
-            .onAppear {
-                homeViewModel.fetchMonthlySummary(for: Date())
-                homeViewModel.fetchMonthlyExpense(for: Date())
+                .task {
+                    await homeViewModel.addTestData()
+                    await homeViewModel.fetchMonthlySummary(for: Date())
+                    await homeViewModel.fetchMonthlyExpense(for: Date())
+                }
             }
         }
         .background(Color.Background.screen)
@@ -70,6 +72,32 @@ struct HomeView: View {
             .listRowSeparator(.hidden)
             .listRowInsets(EdgeInsets())
             .listRowBackground(Color.clear)
+        }
+    }
+
+    // 1) 讀取 ScrollView 偏移量的 PreferenceKey
+    private struct ScrollOffsetKey: PreferenceKey {
+        static var defaultValue: CGFloat = 0
+        static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+            value = nextValue()
+        }
+    }
+
+    // 2) 可追蹤偏移量的 ScrollView（上報 y 偏移）
+    struct TrackableScrollView<Content: View>: View {
+        let content: Content
+        init(@ViewBuilder content: () -> Content) { self.content = content() }
+
+        var body: some View {
+            ScrollView {
+                // 這個錨點用來計算 content 相對於全域座標的 y
+                GeometryReader { geo in
+                    Color.clear
+                        .preference(key: ScrollOffsetKey.self, value: geo.frame(in: .global).minY)
+                }
+                .frame(height: 0)
+                content
+            }
         }
     }
 }
