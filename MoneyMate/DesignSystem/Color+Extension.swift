@@ -16,7 +16,7 @@ extension Color {
     }
 
     enum Text {
-        static let primaryDark = Color(hex: "#000000")   // 主文字的黑深色
+        static let primary = Color(hex: "#000000")   // 主文字的黑深色
         static let secondary = Color(hex: "#999999") // 次要主要文字
         static let inverse = Color(hex: "#FFFFFF") // 反白
         static let negative = Color(hex: "#E53935") // 支出用紅色

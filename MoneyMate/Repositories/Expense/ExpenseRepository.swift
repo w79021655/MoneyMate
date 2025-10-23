@@ -22,6 +22,4 @@ final class ExpenseRepository: ExpenseRepositoryProtocol {
     func fetchExpenses(from startDate: Date) async -> [Expense] {
         await dataProviderHelper.fetchPaginatedAfterDate(startDate: startDate)
     }
-
-    func addTestData() async {}
 }

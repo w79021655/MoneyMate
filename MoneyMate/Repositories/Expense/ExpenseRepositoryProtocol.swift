@@ -18,3 +18,10 @@ protocol ExpenseRepositoryProtocol {
 
     func addTestData() async
 }
+
+extension ExpenseRepositoryProtocol {
+
+    func addTestData() async {
+        await self.addTestData()
+    }
+}

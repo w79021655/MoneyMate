@@ -44,7 +44,7 @@ struct TransactionRowView: View {
                     .foregroundColor(Color.Text.secondary)
                 Text(title)
                     .font(.titleMedium)
-                    .foregroundColor(Color.Text.primaryDark)
+                    .foregroundColor(Color.Text.primary)
             }
 
             Spacer()

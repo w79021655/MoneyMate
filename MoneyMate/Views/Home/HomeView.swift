@@ -22,29 +22,40 @@ struct HomeView: View {
 
             TrackableScrollView {
                 LazyVStack {
-                    ForEach(homeViewModel.expenses) { expense in
-                        TransactionRowView(
-                            icon: expense.category.systemImageName,
-                            iconColor: expense.category.color,
-                            title: expense.remark,
-                            date: expense.date,
-                            amount: expense.amount
-                        )
-                        .padding(.horizontal, 15)
-                        .padding(.top, expense == homeViewModel.expenses.first ? 16 : 12)
-                        .listRowInsets(EdgeInsets())
-                        .listRowSeparator(.hidden)
-                        .task {
-                            if expense == homeViewModel.expenses.last {
-                                await homeViewModel.loadNextPageIfNeeded()
+                    if homeViewModel.expenses.isEmpty {
+                        EmptyStateView(
+                            title: "目前沒有任何記帳",
+                            message: "開始新增第一筆收支紀錄吧！",
+                            systemImage: "doc.text.magnifyingglass"
+                        ) {
+                            print("新增記帳被點擊")
+                        }
+                        .padding(.top, 200)
+                    } else {
+                        ForEach(homeViewModel.expenses) { expense in
+                            TransactionRowView(
+                                icon: expense.category.systemImageName,
+                                iconColor: expense.category.color,
+                                title: expense.remark,
+                                date: expense.date,
+                                amount: expense.amount
+                            )
+                            .padding(.horizontal, 15)
+                            .padding(.top, expense == homeViewModel.expenses.first ? 16 : 12)
+                            .listRowInsets(EdgeInsets())
+                            .listRowSeparator(.hidden)
+                            .task {
+                                if expense == homeViewModel.expenses.last {
+                                    await homeViewModel.loadNextPageIfNeeded()
+                                }
                             }
                         }
+                        .background(Color.Background.screen)
+                        loadingRow
                     }
-                    .background(Color.Background.screen)
-                    loadingRow
                 }
                 .task {
-                    await homeViewModel.addTestData()
+//                    await homeViewModel.addTestData()
                     await homeViewModel.fetchMonthlySummary(for: Date())
                     await homeViewModel.fetchMonthlyExpense(for: Date())
                 }
