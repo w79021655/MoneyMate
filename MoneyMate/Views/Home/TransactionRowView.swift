@@ -5,7 +5,6 @@
 //  Created by 吳駿 on 2025/5/16.
 //
 
-
 import SwiftUI
 
 struct TransactionRowView: View {

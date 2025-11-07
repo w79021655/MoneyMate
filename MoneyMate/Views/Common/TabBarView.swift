@@ -39,7 +39,7 @@ struct TabBarView: View {
                     }
                     .sheet(isPresented: $isShowingAddSheet) {
                         ExpenseEditorSheet()
-                            .presentationDetents([.medium])
+                            .presentationDetents([.large])
                             .presentationDragIndicator(.hidden)
                             .presentationCornerRadius(16)
                     }

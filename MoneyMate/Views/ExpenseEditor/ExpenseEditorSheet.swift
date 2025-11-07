@@ -10,23 +10,26 @@ import SwiftUI
 /// 編輯費用畫面
 struct ExpenseEditorSheet: View {
     @StateObject var viewModel = ExpenseEditorViewModel()
-    @Environment(\.dismiss) private var dismiss
+    @State private var showCategorySheet = false
 
     var body: some View {
         VStack {
             ExpenseEditorHeaderView(
-                categoryTitle: "餐飲支出",
-                amountText: "1200",
-                icon: Category.dining.systemImageName,
-                iconColor: .red
+                amount: $viewModel.amount,
+                selectedCategory: $viewModel.category
             )
+            .onTapGesture {
+                withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
+                    showCategorySheet = true
+                }
+                UIImpactFeedbackGenerator(style: .light).impactOccurred()
+            }
 
             Form {
                 Section(header: Text("")) {
                     TextField("輸入金額", text: $viewModel.amountText)
                         .keyboardType(.numberPad)
                 }
-
                 DatePicker(selection: $viewModel.date,
                            displayedComponents: [.date, .hourAndMinute]) {
                     Label {
@@ -39,8 +42,7 @@ struct ExpenseEditorSheet: View {
                             .foregroundColor(Color.Brand.primary)
                     }
                 }
-                           .environment(\.locale, Locale(identifier: "zh_TW"))
-
+                .environment(\.locale, Locale(identifier: "zh_TW"))
                 HStack(spacing: 15) {
                     Image(systemName: "square.and.pencil")
                         .foregroundColor(Color.Brand.primary)
@@ -52,14 +54,18 @@ struct ExpenseEditorSheet: View {
                 }
             }
         }
+        .sheet(isPresented: $showCategorySheet) {
+            CategoryEditorSheet(selectedCategory: $viewModel.category,
+                                title: "支出")
+                .presentationDetents([.medium])
+                .presentationCornerRadius(16)
+        }
     }
 }
 
 struct ExpenseEditorHeaderView: View {
-    let categoryTitle: String
-    let amountText: String
-    let icon: String
-    let iconColor: Color
+    @Binding var amount: Int
+    @Binding var selectedCategory: Category
 
     var body: some View {
         VStack(alignment: .leading,
@@ -67,17 +73,19 @@ struct ExpenseEditorHeaderView: View {
             HStack {
                 ZStack {
                     Circle()
-                        .fill(iconColor)
+                        .fill(selectedCategory.color)
                         .frame(width: 50, height: 50)
-                    Image(systemName: icon)
+                    Image(systemName: selectedCategory.systemImageName)
                         .font(.system(size: 22))
                         .foregroundColor(.white)
                 }
-                Text(categoryTitle)
+                Text(selectedCategory.rawValue)
                     .font(Font.titleLarge)
+                    .foregroundStyle(Color.Text.inverse)
                 Spacer()
-                Text(amountText)
+                Text(amount.string)
                     .font(Font.titleLarge)
+                    .foregroundStyle(Color.Text.inverse)
             }
         }
         .padding(EdgeInsets(
@@ -88,7 +96,6 @@ struct ExpenseEditorHeaderView: View {
         ))
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(Color.Brand.primary)
-        .foregroundColor(Color.Text.inverse)
     }
 }
 

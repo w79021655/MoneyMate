@@ -10,7 +10,7 @@ import SwiftUI
 enum Category: String, CaseIterable, Identifiable, Codable {
 
     // 支出類別
-    case dining = "餐飲"
+    case dining = "吃飯"
     case clothing = "服裝"
     case fruits = "水果"
     case shopping = "購物"
