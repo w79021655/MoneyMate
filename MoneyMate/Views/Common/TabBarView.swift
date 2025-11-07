@@ -10,6 +10,7 @@ import SwiftUI
 struct TabBarView: View {
     enum Tab: Int { case home, grid, search }
     @State private var selected: Tab = .home
+    @State private var isShowingAddSheet = false
 
     var body: some View {
         NavigationStack {
@@ -32,11 +33,16 @@ struct TabBarView: View {
                     Spacer()
 
                     Button {
-                        print("+ tapped")
+                        isShowingAddSheet = true
                     } label: {
                         Image(systemName: "plus.app")
                     }
-
+                    .sheet(isPresented: $isShowingAddSheet) {
+                        ExpenseEditorSheet()
+                            .presentationDetents([.medium])
+                            .presentationDragIndicator(.hidden)
+                            .presentationCornerRadius(16)
+                    }
                 }
             }
         }

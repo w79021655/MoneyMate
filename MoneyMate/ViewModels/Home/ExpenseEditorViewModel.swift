@@ -13,13 +13,17 @@ import SwiftData
 class ExpenseEditorViewModel: ObservableObject {
     private var repository = ExpenseRepository()
 
-    @Published var amount: Int = 0
+    @Published var amountText: String = ""
     @Published var category: Category = .dining
     @Published var date: Date = Date()
     @Published var dateTime: Date = Date()
     @Published var remark: String = ""
 
     func createExpense() async {
+        guard let amount = Int(amountText), amount > 0 else {
+            return
+        }
+
         let newExpense = Expense(
             amount: amount,
             category: category,

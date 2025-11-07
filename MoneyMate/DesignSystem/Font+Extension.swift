@@ -16,12 +16,12 @@ extension Font {
 
     // MARK: - Title
     static let titleExtraLarge = Font.system(size: 34, weight: .bold)
-    static let titleLarge = Font.system(size: 20, weight: .semibold)
+    static let titleLarge = Font.system(size: 24, weight: .semibold)
     static let titleMedium = Font.system(size: 18, weight: .medium)
-    static let titleSmall = Font.system(size: 16, weight: .medium)
+    static let titleSmall = Font.system(size: 14, weight: .medium)
 
     // MARK: - Body
-    static let bodyLarge = Font.system(size: 16, weight: .regular)
+    static let bodyLarge = Font.system(size: 20, weight: .regular)
     static let bodyMedium = Font.system(size: 14, weight: .regular)
     static let bodySmall = Font.system(size: 12, weight: .regular)
 
