@@ -54,13 +54,12 @@ struct ExpenseEditorSheet: View {
                     Spacer()
                     Picker("選擇類型", selection: $viewModel.type) {
                         Text("支出")
-                            .tag(TransactionType.expenditure.id)
+                            .tag(TransactionType.expenditure)
                             .font(Font.bodyMedium)
                         Text("收入")
-                            .tag(TransactionType.income.id)
+                            .tag(TransactionType.income)
                             .font(Font.bodyMedium)
                     }
-                    .tint(viewModel.type == .expenditure ? .red : .green)
                     .pickerStyle(.segmented)
                     .frame(maxWidth: 200)
                 }
@@ -122,6 +121,6 @@ struct ExpenseEditorHeaderView: View {
     }
 }
 
-#Preview {
-    ExpenseEditorSheet()
-}
+//#Preview {
+//    ExpenseEditorSheet()
+//}
