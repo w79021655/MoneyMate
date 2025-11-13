@@ -18,8 +18,11 @@ class Expense: Identifiable, Equatable, Decodable {
     /// 收入支出的金額
     var amount: Int
 
-    /// 收入支出類型
+    /// 消費種類
     var category: Category
+
+    /// 收入支出類型
+    var type: TransactionType
 
     /// 消費日期
     var date: Date
@@ -34,6 +37,7 @@ class Expense: Identifiable, Equatable, Decodable {
         id: UUID = UUID(),
         amount: Int,
         category: Category,
+        type: TransactionType,
         date: Date,
         dateTime: Date,
         remark: String
@@ -41,6 +45,7 @@ class Expense: Identifiable, Equatable, Decodable {
         self.id = id
         self.amount = amount
         self.category = category
+        self.type = type
         self.date = date
         self.dateTime = dateTime
         self.remark = remark
@@ -48,15 +53,19 @@ class Expense: Identifiable, Equatable, Decodable {
 
     required convenience init(from decoder: Decoder) throws {
         enum CodingKeys: String, CodingKey {
-            case id, amount, category, date, dateTime, remark
+            case id, amount, category, type, date, dateTime, remark
         }
 
         let container = try decoder.container(keyedBy: CodingKeys.self)
 
         let id = try container.decode(UUID.self, forKey: .id)
         let amount = try container.decode(Int.self, forKey: .amount)
+
         let categoryRaw = try container.decode(String.self, forKey: .category)
         let category = Category(rawValue: categoryRaw) ?? .dining
+
+        let typeRaw = try container.decode(String.self, forKey: .type)
+        let type = TransactionType(rawValue: typeRaw) ?? .expenditure
 
         let dateStr = try container.decode(String.self, forKey: .date)
         let date = dateStr.convertToDate()
@@ -66,7 +75,7 @@ class Expense: Identifiable, Equatable, Decodable {
 
         let remark = try container.decode(String.self, forKey: .remark)
 
-        self.init(id: id, amount: amount, category: category, date: date, dateTime: dateTime, remark: remark)
+        self.init(id: id, amount: amount, category: category, type: type, date: date, dateTime: dateTime, remark: remark)
     }
 }
 

@@ -10,6 +10,7 @@ import Combine
 import SwiftData
 
 /// 收入支出的 新增/編輯
+@MainActor
 class ExpenseEditorViewModel: ObservableObject {
     private var repository = ExpenseRepository()
 
@@ -37,6 +38,7 @@ class ExpenseEditorViewModel: ObservableObject {
     }
 
     @Published var category: Category = .dining
+    @Published var type: TransactionType = .expenditure
     @Published var date: Date = Date()
     @Published var dateTime: Date = Date()
     @Published var remark: String = "" {
@@ -55,6 +57,7 @@ class ExpenseEditorViewModel: ObservableObject {
         let newExpense = Expense(
             amount: amount,
             category: category,
+            type: type,
             date: date,
             dateTime: dateTime,
             remark: remark

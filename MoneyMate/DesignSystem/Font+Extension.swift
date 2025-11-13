@@ -22,8 +22,8 @@ extension Font {
 
     // MARK: - Body
     static let bodyLarge = Font.system(size: 20, weight: .regular)
-    static let bodyMedium = Font.system(size: 14, weight: .regular)
-    static let bodySmall = Font.system(size: 12, weight: .regular)
+    static let bodyMedium = Font.system(size: 16, weight: .regular)
+    static let bodySmall = Font.system(size: 14, weight: .regular)
 
     // MARK: - Label / Caption
     static let labelLarge = Font.system(size: 14, weight: .semibold)

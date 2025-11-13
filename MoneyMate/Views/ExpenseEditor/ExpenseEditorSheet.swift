@@ -30,11 +30,12 @@ struct ExpenseEditorSheet: View {
                     TextField("輸入金額", text: $viewModel.amountText)
                         .keyboardType(.numberPad)
                 }
+
                 DatePicker(selection: $viewModel.date,
                            displayedComponents: [.date, .hourAndMinute]) {
                     Label {
                         Text("日期")
-                            .font(Font.bodyLarge)
+                            .font(Font.bodyMedium)
                             .foregroundStyle(Color.Text.primary)
                     } icon: {
                         Image(systemName: "calendar.badge.plus")
@@ -42,15 +43,36 @@ struct ExpenseEditorSheet: View {
                             .foregroundColor(Color.Brand.primary)
                     }
                 }
+
                 .environment(\.locale, Locale(identifier: "zh_TW"))
+                HStack(spacing: 15) {
+                    Image(systemName: "dollarsign.bank.building")
+                        .foregroundColor(Color.Brand.primary)
+                    Text("類型")
+                        .font(Font.bodyMedium)
+                        .foregroundStyle(Color.Text.primary)
+                    Spacer()
+                    Picker("選擇類型", selection: $viewModel.type) {
+                        Text("支出")
+                            .tag(TransactionType.expenditure.id)
+                            .font(Font.bodyMedium)
+                        Text("收入")
+                            .tag(TransactionType.income.id)
+                            .font(Font.bodyMedium)
+                    }
+                    .tint(viewModel.type == .expenditure ? .red : .green)
+                    .pickerStyle(.segmented)
+                    .frame(maxWidth: 200)
+                }
+
                 HStack(spacing: 15) {
                     Image(systemName: "square.and.pencil")
                         .foregroundColor(Color.Brand.primary)
                     Text("備註")
-                        .font(Font.bodyLarge)
+                        .font(Font.bodyMedium)
                         .foregroundStyle(Color.Text.primary)
                     TextField("", text: $viewModel.remark)
-                        .font(Font.bodyLarge)
+                        .font(Font.bodyMedium)
                 }
             }
         }
@@ -63,6 +85,7 @@ struct ExpenseEditorSheet: View {
     }
 }
 
+/// 編輯費用標題區塊
 struct ExpenseEditorHeaderView: View {
     @Binding var amount: Int
     @Binding var selectedCategory: Category

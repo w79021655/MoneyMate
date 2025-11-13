@@ -8,31 +8,27 @@
 import SwiftUI
 
 struct TransactionRowView: View {
-    let icon: String
-    let iconColor: Color
-    let title: String
-    let date: Date
-    let amount: Int
+    let expense: Expense
 
     var amountColor: Color {
-        amount < 0 ? .red : .black
+        expense.type == .expenditure ? .red : .black
     }
 
     var formattedAmount: String {
-        NumberFormatter.currency.string(from: NSNumber(value: amount)) ?? "\(amount)"
+        NumberFormatter.currency.string(from: NSNumber(value: expense.amount)) ?? "\(expense.amount)"
     }
 
     var formattedDate: String {
-        DateFormatter.localized.string(from: date)
+        DateFormatter.localized.string(from: expense.date)
     }
 
     var body: some View {
         HStack(spacing: 15) {
             ZStack {
                 Circle()
-                    .fill(iconColor)
+                    .fill(expense.category.color)
                     .frame(width: 50, height: 50)
-                Image(systemName: icon)
+                Image(systemName: expense.category.systemImageName)
                     .font(.system(size: 22))
                     .foregroundColor(.white)
             }
@@ -41,7 +37,7 @@ struct TransactionRowView: View {
                 Text(formattedDate)
                     .font(Font.bodyMedium)
                     .foregroundColor(Color.Text.secondary)
-                Text(title)
+                Text(expense.remark)
                     .font(.titleMedium)
                     .foregroundColor(Color.Text.primary)
             }
@@ -60,12 +56,13 @@ struct TransactionRowView: View {
 }
 
 #Preview {
-    TransactionRowView(
-        icon: "train.side.front.car",
-        iconColor: .blue,
-        title: "鐵道月卡",
-        date: Date(),
-        amount: -700
+    TransactionRowView(expense:
+            .init(amount: -700,
+                  category: .car,
+                  type: .expenditure,
+                  date: Date(),
+                  dateTime: Date(),
+                  remark: "鐵道月卡")
     )
     .padding(15)
 }

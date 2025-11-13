@@ -33,13 +33,7 @@ struct HomeView: View {
                         .padding(.top, 200)
                     } else {
                         ForEach(homeViewModel.expenses) { expense in
-                            TransactionRowView(
-                                icon: expense.category.systemImageName,
-                                iconColor: expense.category.color,
-                                title: expense.remark,
-                                date: expense.date,
-                                amount: expense.amount
-                            )
+                            TransactionRowView(expense: expense)
                             .padding(.horizontal, 15)
                             .padding(.top, expense == homeViewModel.expenses.first ? 16 : 12)
                             .listRowInsets(EdgeInsets())

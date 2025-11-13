@@ -10,6 +10,7 @@ import SwiftData
 
 /// `DataProviderHelper` 提供 SwiftData 常用操作的泛型封裝，包括資料查詢、新增、刪除等功能
 /// 透過靜態方法與泛型支援，減少重複程式碼，提高資料操作一致性與可讀性
+@MainActor
 struct DataProviderHelper {
 
     static let shared = DataProviderHelper()
