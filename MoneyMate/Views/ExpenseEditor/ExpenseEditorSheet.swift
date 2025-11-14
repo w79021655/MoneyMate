@@ -74,6 +74,24 @@ struct ExpenseEditorSheet: View {
                         .font(Font.bodyMedium)
                 }
             }
+
+            Button {
+                Task {
+                    await viewModel.createExpense()
+                }
+            } label: {
+                Text("儲存")
+                    .font(.titleLarge)
+                    .foregroundStyle(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 15)
+                    .background(
+                        RoundedRectangle(cornerRadius: 16)
+                            .fill(Color.Brand.primary)
+                    )
+                    .shadow(color: Color.Text.primary.opacity(0.15), radius: 16, x: 0, y: 1)
+            }
+            .padding(.horizontal, 15)
         }
         .sheet(isPresented: $showCategorySheet) {
             CategoryEditorSheet(selectedCategory: $viewModel.category,
@@ -121,6 +139,6 @@ struct ExpenseEditorHeaderView: View {
     }
 }
 
-//#Preview {
-//    ExpenseEditorSheet()
-//}
+#Preview {
+    ExpenseEditorSheet()
+}
