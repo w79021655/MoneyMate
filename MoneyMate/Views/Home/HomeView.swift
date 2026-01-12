@@ -10,6 +10,7 @@ import SwiftUI
 struct HomeView: View {
     @Environment(\.modelContext) private var context
     @StateObject private var homeViewModel = HomeViewModel()
+    let refreshTrigger: UUID
 
     var body: some View {
         VStack {
@@ -42,13 +43,13 @@ struct HomeView: View {
                                 if expense == homeViewModel.expenses.last {
                                     await homeViewModel.loadNextPageIfNeeded()
                                 }
-                            }
+                            }                            
                         }
                         .background(Color.Background.screen)
                         loadingRow
                     }
                 }
-                .task {
+                .task(id: refreshTrigger) {
 //                    await homeViewModel.addTestData()
                     await homeViewModel.fetchMonthlySummary(for: Date())
                     await homeViewModel.fetchMonthlyExpense(for: Date())
@@ -108,5 +109,5 @@ struct HomeView: View {
 }
 
 #Preview {
-    HomeView()
+    HomeView(refreshTrigger: .init())
 }

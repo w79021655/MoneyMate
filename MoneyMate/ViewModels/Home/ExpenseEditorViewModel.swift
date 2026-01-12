@@ -55,7 +55,7 @@ class ExpenseEditorViewModel: ObservableObject {
         }
 
         let newExpense = Expense(
-            amount: amount,
+            amount: type == .expenditure ? -amount : amount,
             category: category,
             type: type,
             date: date,

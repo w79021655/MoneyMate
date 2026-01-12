@@ -11,13 +11,14 @@ struct TabBarView: View {
     enum Tab: Int { case home, grid, search }
     @State private var selected: Tab = .home
     @State private var isShowingAddSheet = false
+    @State private var homeRefreshTrigger = UUID()
 
     var body: some View {
         NavigationStack {
             Group {
                 switch selected {
                 case .home:
-                    HomeView()
+                    HomeView(refreshTrigger: homeRefreshTrigger)
                 case .grid:
                     Color.white // TODO: Replace with your real Grid view
                 case .search:
@@ -37,7 +38,9 @@ struct TabBarView: View {
                     } label: {
                         Image(systemName: "plus.app")
                     }
-                    .sheet(isPresented: $isShowingAddSheet) {
+                    .sheet(isPresented: $isShowingAddSheet, onDismiss: {
+                        homeRefreshTrigger = UUID()
+                    }) {
                         ExpenseEditorSheet()
                             .presentationDetents([.large])
                             .presentationDragIndicator(.hidden)

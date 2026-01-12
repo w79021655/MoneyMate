@@ -9,6 +9,7 @@ import SwiftUI
 
 /// 編輯費用畫面
 struct ExpenseEditorSheet: View {
+    @Environment(\.dismiss) private var dismiss
     @StateObject var viewModel = ExpenseEditorViewModel()
     @State private var showCategorySheet = false
 
@@ -78,6 +79,7 @@ struct ExpenseEditorSheet: View {
             Button {
                 Task {
                     await viewModel.createExpense()
+                    dismiss()
                 }
             } label: {
                 Text("儲存")
