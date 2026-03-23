@@ -1,0 +1,40 @@
+📘 TransactionRowView – Swipe 行為
+
+1. 這個元件是做什麼的？
+TransactionRowView 是一個支援 自製 swipe 刪除行為 的列表列元件，
+設計用於以下情境：
+    •    使用 ScrollView + LazyVStack
+    •    無法使用 List.swipeActions
+    •    需要保留 垂直滾動流暢度
+    •    同時支援 水平滑動刪除
+👉 這個元件的重點 不在 UI 樣式，而在 手勢行為的正確處理方式。
+
+2. 為什麼不能用 swipeActions？
+SwiftUI 的 swipeActions 只支援 List row。
+本專案使用：
+ScrollView
+ └─ LazyVStack
+ 在此架構下：
+    •    swipeActions 不會生效
+    •    強行使用會造成 UX 不一致
+因此選擇 自行實作 DragGesture + 狀態控制。
+
+3. 設計核心
+guard abs(translation.width) > abs(translation.height) else { return }
+原因：
+    •    ScrollView 本身需要垂直滑動
+    •    若不過濾方向，會造成：
+    •    滾動卡頓
+    •    滑動誤判
+    •    UX 變差
+👉 只在「使用者明確想水平滑動」時才處理 swipe
+
+4. 使用方式
+TransactionRowView(
+    expense: expense,
+    onDelete: {
+        Task {
+            await homeViewModel.delete(expense)
+        }
+    }
+)

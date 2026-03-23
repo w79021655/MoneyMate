@@ -90,4 +90,11 @@ final class HomeViewModel: ObservableObject {
     func addTestData() async {
         await useCase.addTestData()
     }
+
+    func deleteAt(at index: Int,to expense: Expense) async {
+        await useCase.deleteAt(expense.persistentModelID)
+
+        await fetchMonthlySummary(for: Date())
+        await fetchMonthlyExpense(for: Date())
+    }
 }

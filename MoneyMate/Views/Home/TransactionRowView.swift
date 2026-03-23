@@ -9,6 +9,12 @@ import SwiftUI
 
 struct TransactionRowView: View {
     let expense: Expense
+    let onDelete: EmptyClosure
+
+    @State private var offsetX: CGFloat = 0
+    private let deleteWidth: CGFloat = 80
+
+    @State private var isHorizontalDragging: Bool? = nil
 
     var amountColor: Color {
         expense.type == .expenditure ? .red : .black
@@ -23,6 +29,10 @@ struct TransactionRowView: View {
     }
 
     var body: some View {
+        rowContent
+    }
+
+    var rowContent: some View {
         HStack(spacing: 15) {
             ZStack {
                 Circle()
@@ -50,19 +60,35 @@ struct TransactionRowView: View {
         }
         .padding()
         .background(Color.Background.card)
-        .clipShape(RoundedRectangle(cornerRadius: 16))
-        .shadow(color: Color.Shadow.card, radius: 4, x: 0, y: 2)
+        .cardStyle()
+        .contextMenu {
+            Button {
+
+            } label: {
+                Label("編輯", systemImage: "pencil")
+            }
+            Button(role: .destructive) {
+                onDelete()
+            } label: {
+                Label("刪除", systemImage: "trash")
+            }
+        }
     }
 }
 
 #Preview {
-    TransactionRowView(expense:
-            .init(amount: -700,
-                  category: .car,
-                  type: .expenditure,
-                  date: Date(),
-                  dateTime: Date(),
-                  remark: "鐵道月卡")
+    TransactionRowView(
+        expense: .init(
+            amount: -700,
+            category: .car,
+            type: .expenditure,
+            date: Date(),
+            dateTime: Date(),
+            remark: "鐵道月卡"
+        ),
+        onDelete: {
+            print("Delete tapped (Preview)")
+        }
     )
     .padding(15)
 }

@@ -32,6 +32,10 @@ final class HomeUseCase {
         return expenses
     }
 
+    func deleteAt(_ id: PersistentIdentifier) async {
+        await repository.deleteByPersistentId(id)
+    }
+
     func addTestData() async {
         await repository.addTestData()
     }

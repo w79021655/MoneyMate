@@ -94,6 +94,8 @@ struct ExpenseEditorSheet: View {
                     .shadow(color: Color.Text.primary.opacity(0.15), radius: 16, x: 0, y: 1)
             }
             .padding(.horizontal, 15)
+            .disabled(!viewModel.canSubmit)
+            .opacity(viewModel.canSubmit ? 1 : 0.5)
         }
         .sheet(isPresented: $showCategorySheet) {
             CategoryEditorSheet(selectedCategory: $viewModel.category,
@@ -106,7 +108,7 @@ struct ExpenseEditorSheet: View {
 
 /// 編輯費用標題區塊
 struct ExpenseEditorHeaderView: View {
-    @Binding var amount: Int
+    @Binding var amount: Int?
     @Binding var selectedCategory: Category
 
     var body: some View {
@@ -125,7 +127,7 @@ struct ExpenseEditorHeaderView: View {
                     .font(Font.titleLarge)
                     .foregroundStyle(Color.Text.inverse)
                 Spacer()
-                Text(amount.string)
+                Text(amount?.string ?? "0")
                     .font(Font.titleLarge)
                     .foregroundStyle(Color.Text.inverse)
             }

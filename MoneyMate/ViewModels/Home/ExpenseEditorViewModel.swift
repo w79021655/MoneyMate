@@ -16,27 +16,28 @@ class ExpenseEditorViewModel: ObservableObject {
 
     @Published var amountText: String = "" {
         didSet {
+            // 長度限制
             if amountText.count > 10 {
                 amountText = String(amountText.prefix(10))
+                return
             }
 
+            // 空字串 = 尚未輸入
+            guard !amountText.isEmpty else {
+                amount = nil
+                return
+            }
+
+            // 解析數字
             if let intValue = Int(amountText) {
                 amount = intValue
             } else {
-                amount = 0
+                amount = nil
             }
         }
     }
 
-    @Published var amount: Int = 0 {
-        didSet {
-            let newText = String(amount)
-            if newText != amountText {
-                amountText = newText
-            }
-        }
-    }
-
+    @Published var amount: Int? = nil
     @Published var category: Category = .dining
     @Published var type: TransactionType = .expenditure
     @Published var date: Date = Date()
@@ -47,6 +48,18 @@ class ExpenseEditorViewModel: ObservableObject {
                 remark = String(remark.prefix(10))
             }
         }
+    }
+
+    /// 是否可以送出
+    var canSubmit: Bool {
+        guard
+            let amount,
+            amount > 0,
+            !remark.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        else {
+            return false
+        }
+        return true
     }
 
     func createExpense() async {

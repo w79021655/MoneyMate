@@ -18,6 +18,10 @@ final class MockExpenseRepository: ExpenseRepositoryProtocol {
         await dataProviderHelper.deleteAll(of: Expense.self)
     }
 
+    func deleteByPersistentId(_ id: PersistentIdentifier) async {
+        await dataProviderHelper.deleteById(Expense.self, id: id)
+    }
+
     /// 取得指定起始日期往後抓取指定 20 筆數的資料
     func fetchExpenses(from startDate: Date) async -> [Expense] {
         let dataset: [Expense] = await dataProviderHelper.fetchPaginatedAfterDate(startDate: startDate)

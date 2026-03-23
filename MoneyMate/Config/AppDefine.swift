@@ -12,3 +12,5 @@ let dateHelper = DateHelper.shared
 let codableHelper: CodableHelper = CodableHelper.shared
 
 typealias Parameters = [String: Any]
+
+typealias EmptyClosure = (() -> Void)

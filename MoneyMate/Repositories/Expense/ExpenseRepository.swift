@@ -14,6 +14,10 @@ final class ExpenseRepository: ExpenseRepositoryProtocol {
         await dataProviderHelper.insert(expense)
     }
 
+    func deleteByPersistentId(_ id: PersistentIdentifier) async {
+        await dataProviderHelper.deleteById(Expense.self, id: id)
+    }
+
     func deleteAll() async {
         await dataProviderHelper.deleteAll(of: Expense.self)
     }
