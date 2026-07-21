@@ -9,25 +9,33 @@ import SwiftUI
 import Foundation
 import SwiftData
 
-protocol ExpenseRepositoryProtocol {
-
-    func addExpense(_ expense: Expense) async
-
-    func deleteAll() async
-
-    func deleteByPersistentId(_ id: PersistentIdentifier) async
-
-    /// 取得指定起始日期往後抓取指定 20 筆數的資料
-    func fetchExpenses(from startDate: Date) async -> [Expense]
-
-    func addTestData() async
+struct ExpensePageCursor: Equatable {
+    let date: Date
+    let id: UUID
 }
 
-extension ExpenseRepositoryProtocol {
+struct ExpensePage {
+    let expenses: [Expense]
+    let nextCursor: ExpensePageCursor?
+    let hasMore: Bool
+}
 
-    func addTestData() async {
-        await self.addTestData()
-    }
+@MainActor
+protocol ExpenseRepositoryProtocol {
+
+    func addExpense(_ expense: Expense) async throws
+
+    func deleteAll() async throws
+
+    func deleteByPersistentId(_ id: PersistentIdentifier) async throws
+
+    func fetchExpenses(in interval: DateInterval) async throws -> [Expense]
+
+    func fetchExpensePage(
+        in interval: DateInterval,
+        after cursor: ExpensePageCursor?,
+        limit: Int
+    ) async throws -> ExpensePage
 }
 
 enum TransactionType: String, CaseIterable, Identifiable, Codable {

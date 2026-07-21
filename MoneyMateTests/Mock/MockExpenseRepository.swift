@@ -1,48 +1,90 @@
 //
 //  MockExpenseRepository.swift
-//  MoneyMate
+//  MoneyMateTests
 //
 //  Created by 吳駿 on 2025/9/16.
 //
 
 import Foundation
 import SwiftData
+@testable import MoneyMate
 
+enum MockExpenseRepositoryError: Error {
+    case requestedFailure
+}
+
+@MainActor
 final class MockExpenseRepository: ExpenseRepositoryProtocol {
+    private(set) var expenses: [Expense]
+    var shouldFail = false
 
-    func addExpense(_ expense: Expense) async {
-        await dataProviderHelper.insert(expense)
+    init(expenses: [Expense] = []) {
+        self.expenses = expenses
     }
 
-    func deleteAll() async {
-        await dataProviderHelper.deleteAll(of: Expense.self)
+    func addExpense(_ expense: Expense) async throws {
+        try throwIfNeeded()
+        expenses.append(expense)
     }
 
-    func deleteByPersistentId(_ id: PersistentIdentifier) async {
-        await dataProviderHelper.deleteById(Expense.self, id: id)
+    func deleteAll() async throws {
+        try throwIfNeeded()
+        expenses.removeAll()
     }
 
-    /// 取得指定起始日期往後抓取指定 20 筆數的資料
-    func fetchExpenses(from startDate: Date) async -> [Expense] {
-        let dataset: [Expense] = await dataProviderHelper.fetchPaginatedAfterDate(startDate: startDate)
-
-        return dataset
+    func deleteByPersistentId(_ id: PersistentIdentifier) async throws {
+        try throwIfNeeded()
+        expenses.removeAll { $0.persistentModelID == id }
     }
 
-    func addTestData() async {
-        guard let filePath = Bundle.main.path(forResource: "ExpensesList", ofType: "json"),
-              let data = try? Data(contentsOf: URL(fileURLWithPath: filePath), options: .alwaysMapped),
-              let dic = data.dictionary,
-              let content = dic["expense"] as? [Parameters],
-              let outputData = content.data,
-              let result = codableHelper.decode(from: outputData, type: [Expense].self) else {
-            return
+    func fetchExpenses(in interval: DateInterval) async throws -> [Expense] {
+        try throwIfNeeded()
+        return expenses.filter {
+            $0.date >= interval.start && $0.date < interval.end
+        }
+    }
+
+    func fetchExpensePage(
+        in interval: DateInterval,
+        after cursor: ExpensePageCursor?,
+        limit: Int
+    ) async throws -> ExpensePage {
+        try throwIfNeeded()
+
+        let sorted = expenses
+            .filter { expense in
+                guard expense.date >= interval.start,
+                      expense.date < interval.end else {
+                    return false
+                }
+
+                guard let cursor else { return true }
+                return expense.date < cursor.date ||
+                    (expense.date == cursor.date && expense.id.uuidString < cursor.id.uuidString)
+            }
+            .sorted { lhs, rhs in
+                if lhs.date == rhs.date {
+                    return lhs.id.uuidString > rhs.id.uuidString
+                }
+                return lhs.date > rhs.date
+            }
+
+        let hasMore = sorted.count > limit
+        let pageExpenses = Array(sorted.prefix(limit))
+        let nextCursor = pageExpenses.last.map {
+            ExpensePageCursor(date: $0.date, id: $0.id)
         }
 
-        await deleteAll()
-        
-        for expense in result {
-            await addExpense(expense)
+        return ExpensePage(
+            expenses: pageExpenses,
+            nextCursor: nextCursor,
+            hasMore: hasMore
+        )
+    }
+
+    private func throwIfNeeded() throws {
+        if shouldFail {
+            throw MockExpenseRepositoryError.requestedFailure
         }
     }
 }

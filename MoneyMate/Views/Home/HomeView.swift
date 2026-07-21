@@ -8,116 +8,148 @@
 import SwiftUI
 
 struct HomeView: View {
-    @Environment(\.modelContext) private var context
-    @StateObject private var homeViewModel = HomeViewModel()
-    let refreshTrigger: UUID
+    private let viewModel: HomeViewModel
+    private let onAddExpense: EmptyClosure
+
+    init(
+        viewModel: HomeViewModel,
+        onAddExpense: @escaping EmptyClosure
+    ) {
+        self.viewModel = viewModel
+        self.onAddExpense = onAddExpense
+    }
 
     var body: some View {
+        @Bindable var viewModel = viewModel
+
         VStack {
             HomeHeaderView(
-                dateTitle: homeViewModel.currentMonthTitle,
-                balance: "\(homeViewModel.monthlyBalance)",
-                income: homeViewModel.incomeText,
-                expenditure: homeViewModel.expenditureText
+                month: viewModel.displayedMonth,
+                balance: viewModel.monthlyBalance,
+                income: viewModel.monthlyIncome,
+                expenditure: viewModel.monthlyExpense
             )
 
-            TrackableScrollView {
-                LazyVStack {
-                    if homeViewModel.expenses.isEmpty {
-                        EmptyStateView(
-                            title: "目前沒有任何記帳",
-                            message: "開始新增第一筆收支紀錄吧！",
-                            systemImage: "doc.text.magnifyingglass"
-                        ) {
-                            print("新增記帳被點擊")
-                        }
-                        .padding(.top, 200)
-                    } else {
-                        ForEach(Array(homeViewModel.expenses.enumerated()), id: \.element.id) { index, expense in
-                            TransactionRowView(
-                                expense: expense,
-                                onDelete: {
-                                    Task {
-                                        await homeViewModel.deleteAt(at: index, to: expense)
-                                    }
-                                }
-                            )
-                            .padding(.horizontal, 15)
-                            .padding(.top, expense == homeViewModel.expenses.first ? 16 : 12)
-                            .listRowInsets(EdgeInsets())
-                            .listRowSeparator(.hidden)
-                            .task {
-                                if expense == homeViewModel.expenses.last {
-                                    await homeViewModel.loadNextPageIfNeeded()
-                                }
-                            }
-                        }
-                        .background(Color.Background.screen)
-                        loadingRow
-                    }
-                }
-                .task(id: refreshTrigger) {
-//                    await homeViewModel.addTestData()
-                    await homeViewModel.fetchMonthlySummary(for: Date())
-                    await homeViewModel.fetchMonthlyExpense(for: Date())
-                }
-            }
+            HomeContentView(
+                viewModel: viewModel,
+                onAddExpense: onAddExpense
+            )
         }
         .background(Color.Background.screen)
         .ignoresSafeArea(.container, edges: .top)
-        .onAppear {
-            modelContextProvider.configure(context: context)
+        .task {
+            await viewModel.refresh(for: Date())
+        }
+        .alert("作業失敗", isPresented: $viewModel.isShowingOperationError) {
+            Button("好", role: .cancel) {}
+        } message: {
+            Text("資料未能更新，請稍後再試。")
         }
     }
+}
 
-    @ViewBuilder
-    var loadingRow: some View {
-        if homeViewModel.isLoadingNextPage {
-            HStack {
-                Spacer()
+private struct HomeContentView: View {
+    let viewModel: HomeViewModel
+    let onAddExpense: EmptyClosure
+
+    var body: some View {
+        switch viewModel.loadState {
+        case .idle, .loading:
+            ProgressView("載入中")
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+        case .empty:
+            EmptyStateView(
+                title: "目前沒有任何記帳",
+                message: "開始新增第一筆收支紀錄吧！",
+                systemImage: "doc.text.magnifyingglass",
+                action: onAddExpense
+            )
+
+        case .failed:
+            HomeLoadErrorView {
+                Task {
+                    await viewModel.refresh(for: viewModel.displayedMonth)
+                }
+            }
+
+        case .content:
+            ScrollView {
+                LazyVStack {
+                    ForEach(viewModel.expenses) { expense in
+                        TransactionRowView(
+                            expense: expense,
+                            onDelete: {
+                                Task {
+                                    await viewModel.delete(expense)
+                                }
+                            }
+                        )
+                        .padding(.horizontal, Spacing.spacing16)
+                        .padding(.top, expense.id == viewModel.expenses.first?.id ? Spacing.spacing16 : Spacing.spacing12)
+                        .task {
+                            await viewModel.loadNextPageIfNeeded(
+                                currentExpenseID: expense.id
+                            )
+                        }
+                    }
+
+                    PaginationStatusView(
+                        isLoading: viewModel.isLoadingNextPage,
+                        hasError: viewModel.hasPaginationError,
+                        onRetry: {
+                            Task {
+                                await viewModel.retryNextPage()
+                            }
+                        }
+                    )
+                }
+            }
+        }
+    }
+}
+
+private struct PaginationStatusView: View {
+    let isLoading: Bool
+    let hasError: Bool
+    let onRetry: EmptyClosure
+
+    var body: some View {
+        VStack {
+            if isLoading {
                 ProgressView()
-                    .id(homeViewModel.progressID)
                     .tint(Color.Border.loading)
                     .scaleEffect(1.2)
-                    .padding(.vertical, 20)
-                Spacer()
+                    .accessibilityLabel("正在載入更多記帳")
+            } else if hasError {
+                Button("重新載入更多記帳", action: onRetry)
             }
-            .listRowSeparator(.hidden)
-            .listRowInsets(EdgeInsets())
-            .listRowBackground(Color.clear)
         }
+        .padding(.vertical, Spacing.spacing16)
     }
 }
 
-extension HomeView {
+private struct HomeLoadErrorView: View {
+    let onRetry: EmptyClosure
 
-    // 1) 讀取 ScrollView 偏移量的 PreferenceKey
-    private struct ScrollOffsetKey: PreferenceKey {
-        static var defaultValue: CGFloat = 0
-        static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
-            value = nextValue()
+    var body: some View {
+        VStack(spacing: Spacing.spacing16) {
+            Image(systemName: "exclamationmark.triangle")
+                .font(.largeTitle)
+                .foregroundStyle(Color.Text.secondary)
+                .accessibilityHidden(true)
+
+            Text("無法載入記帳資料")
+                .font(.headline)
+
+            Text("請確認後再試一次。")
+                .font(.subheadline)
+                .foregroundStyle(Color.Text.secondary)
+
+            Button("重新載入", action: onRetry)
+                .buttonStyle(.borderedProminent)
         }
-    }
-
-    // 2) 可追蹤偏移量的 ScrollView（上報 y 偏移）
-    struct TrackableScrollView<Content: View>: View {
-        let content: Content
-        init(@ViewBuilder content: () -> Content) { self.content = content() }
-
-        var body: some View {
-            ScrollView {
-                // 這個錨點用來計算 content 相對於全域座標的 y
-                GeometryReader { geo in
-                    Color.clear
-                        .preference(key: ScrollOffsetKey.self, value: geo.frame(in: .global).minY)
-                }
-                .frame(height: 0)
-                content
-            }
-        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .padding(Spacing.spacing16)
     }
 }
-
-//#Preview {
-//    HomeView(refreshTrigger: .init())
-//}

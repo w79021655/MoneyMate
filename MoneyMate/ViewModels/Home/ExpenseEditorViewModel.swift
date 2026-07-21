@@ -6,15 +6,20 @@
 //
 
 import Foundation
-import Combine
+import Observation
 import SwiftData
 
 /// 收入支出的 新增/編輯
 @MainActor
-class ExpenseEditorViewModel: ObservableObject {
-    private var repository = ExpenseRepository()
+@Observable
+final class ExpenseEditorViewModel {
+    private let repository: any ExpenseRepositoryProtocol
 
-    @Published var amountText: String = "" {
+    init(repository: any ExpenseRepositoryProtocol) {
+        self.repository = repository
+    }
+
+    var amountText: String = "" {
         didSet {
             // 長度限制
             if amountText.count > 10 {
@@ -37,18 +42,20 @@ class ExpenseEditorViewModel: ObservableObject {
         }
     }
 
-    @Published var amount: Int? = nil
-    @Published var category: Category = .dining
-    @Published var type: TransactionType = .expenditure
-    @Published var date: Date = Date()
-    @Published var dateTime: Date = Date()
-    @Published var remark: String = "" {
+    var amount: Int? = nil
+    var category: Category = .dining
+    var type: TransactionType = .expenditure
+    var date: Date = Date()
+    var remark: String = "" {
         didSet {
             if remark.count > 10 {
                 remark = String(remark.prefix(10))
             }
         }
     }
+
+    private(set) var isSaving = false
+    var isShowingSaveError = false
 
     /// 是否可以送出
     var canSubmit: Bool {
@@ -62,20 +69,30 @@ class ExpenseEditorViewModel: ObservableObject {
         return true
     }
 
-    func createExpense() async {
+    func createExpense() async -> Bool {
         guard let amount = Int(amountText), amount > 0 else {
-            return
+            return false
         }
+
+        isSaving = true
+        isShowingSaveError = false
+        defer { isSaving = false }
 
         let newExpense = Expense(
             amount: type == .expenditure ? -amount : amount,
             category: category,
             type: type,
             date: date,
-            dateTime: dateTime,
+            dateTime: date,
             remark: remark
         )
 
-        await repository.addExpense(newExpense)
+        do {
+            try await repository.addExpense(newExpense)
+            return true
+        } catch {
+            isShowingSaveError = true
+            return false
+        }
     }
 }

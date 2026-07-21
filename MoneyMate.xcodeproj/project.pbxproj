@@ -29,16 +29,6 @@
 		895580F12DC47B99008D6D57 /* MoneyMateUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = MoneyMateUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
-/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		8934A2AF2E78FDB90028E933 /* Exceptions for "MoneyMateTests" folder in "MoneyMate" target */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				Mock/MockExpenseRepository.swift,
-			);
-			target = 895580D62DC47B96008D6D57 /* MoneyMate */;
-		};
-/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
-
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		895580D92DC47B96008D6D57 /* MoneyMate */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
@@ -47,9 +37,6 @@
 		};
 		895580EA2DC47B99008D6D57 /* MoneyMateTests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-				8934A2AF2E78FDB90028E933 /* Exceptions for "MoneyMateTests" folder in "MoneyMate" target */,
-			);
 			path = MoneyMateTests;
 			sourceTree = "<group>";
 		};
@@ -411,7 +398,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"MoneyMate/Preview Content\"";
-				DEVELOPMENT_TEAM = M37HGQQ5SV;
+				DEVELOPMENT_TEAM = VHDPFBMQ69;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -445,7 +432,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_ASSET_PATHS = "\"MoneyMate/Preview Content\"";
-				DEVELOPMENT_TEAM = M37HGQQ5SV;
+				DEVELOPMENT_TEAM = VHDPFBMQ69;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;

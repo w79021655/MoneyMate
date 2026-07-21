@@ -6,19 +6,33 @@
 //
 
 import SwiftUI
+import SwiftData
 
 struct TabBarView: View {
-    enum Tab: Int { case home, grid, search }
+    enum Tab: Int {
+        case home, grid, search
+
+        var accessibilityLabel: LocalizedStringResource {
+            switch self {
+            case .home: "首頁"
+            case .grid: "分類"
+            case .search: "搜尋"
+            }
+        }
+    }
+    @Environment(AppDependencies.self) private var dependencies
     @State private var selected: Tab = .home
     @State private var isShowingAddSheet = false
-    @State private var homeRefreshTrigger = UUID()
 
     var body: some View {
         NavigationStack {
             Group {
                 switch selected {
                 case .home:
-                    HomeView(refreshTrigger: homeRefreshTrigger)
+                    HomeView(
+                        viewModel: dependencies.homeViewModel,
+                        onAddExpense: { isShowingAddSheet = true }
+                    )
                 case .grid:
                     Color.white // TODO: Replace with your real Grid view
                 case .search:
@@ -38,10 +52,14 @@ struct TabBarView: View {
                     } label: {
                         Image(systemName: "plus.app")
                     }
-                    .sheet(isPresented: $isShowingAddSheet, onDismiss: {
-                        homeRefreshTrigger = UUID()
-                    }) {
-                        ExpenseEditorSheet()
+                    .accessibilityLabel("新增記帳")
+                    .sheet(isPresented: $isShowingAddSheet) {
+                        ExpenseEditorSheet(
+                            viewModel: dependencies.makeExpenseEditorViewModel(),
+                            onSave: {
+                                await dependencies.homeViewModel.refresh(for: Date())
+                            }
+                        )
                             .presentationDetents([.large])
                             .presentationDragIndicator(.hidden)
                             .presentationCornerRadius(16)
@@ -70,9 +88,19 @@ struct TabBarView: View {
         }
         .tint(isSelected ? Color.accentColor : Color.secondary)
         .animation(.snappy, value: isSelected)
+        .accessibilityLabel(tab.accessibilityLabel)
     }
 }
 
 #Preview {
+    let container = try! ModelContainer(
+        for: Expense.self,
+        configurations: ModelConfiguration(isStoredInMemoryOnly: true)
+    )
+
     TabBarView()
+        .environment(
+            AppDependencies(modelContext: container.mainContext)
+        )
+        .modelContainer(container)
 }

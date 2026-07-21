@@ -9,7 +9,6 @@ import SwiftUI
 
 /// 類型選擇畫面
 struct CategoryEditorSheet: View {
-    @StateObject var viewModel = ExpenseEditorViewModel()
     @Binding var selectedCategory: Category
     let title: String
 

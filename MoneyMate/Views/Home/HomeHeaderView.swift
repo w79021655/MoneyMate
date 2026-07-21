@@ -8,20 +8,23 @@
 import SwiftUI
 
 struct HomeHeaderView: View {
-    let dateTitle: String
-    let balance: String
-    let income: String
-    let expenditure: String
+    let month: Date
+    let balance: Int
+    let income: Int
+    let expenditure: Int
 
     var body: some View {
         VStack(alignment: .leading,
                spacing: Spacing.spacing16) {
             VerticalSpacer(width: 0, height: 40)
-            Text(dateTitle)
+            Text("\(month, format: .dateTime.year().month()) 結餘")
                 .font(Font.labelSmall)
-            Text(balance)
+            Text(balance, format: .number)
                 .font(Font.displayLarge)
-            incomeExpenditure
+            IncomeExpenditureView(
+                income: income,
+                expenditure: expenditure
+            )
         }
         .padding(EdgeInsets(
             top: Spacing.spacing16,
@@ -43,11 +46,17 @@ struct HomeHeaderView: View {
         .foregroundColor(Color.Text.inverse)
     }
 
-    var incomeExpenditure: some View {
+}
+
+private struct IncomeExpenditureView: View {
+    let income: Int
+    let expenditure: Int
+
+    var body: some View {
         HStack {
-            Text(income)
+            Text("收入：\(income, format: .number)")
             VerticalSpacer(width: 15, height: 0)
-            Text(expenditure)
+            Text("支出：\(expenditure, format: .number)")
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(Color.Brand.primary)
@@ -81,9 +90,9 @@ struct RoundedCorner: Shape {
 
 #Preview {
     HomeHeaderView(
-        dateTitle: "2025-05 結餘",
-        balance: "-700",
-        income: "收入：0",
-        expenditure: "支出：-700"
+        month: Date(),
+        balance: -700,
+        income: 0,
+        expenditure: -700
     )
 }

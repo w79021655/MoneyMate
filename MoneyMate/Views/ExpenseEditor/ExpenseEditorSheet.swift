@@ -6,25 +6,40 @@
 //
 
 import SwiftUI
+import SwiftData
 
 /// 編輯費用畫面
 struct ExpenseEditorSheet: View {
     @Environment(\.dismiss) private var dismiss
-    @StateObject var viewModel = ExpenseEditorViewModel()
+    @State private var viewModel: ExpenseEditorViewModel
     @State private var showCategorySheet = false
+    private let onSave: @MainActor () async -> Void
+
+    init(
+        viewModel: ExpenseEditorViewModel,
+        onSave: @escaping @MainActor () async -> Void = {}
+    ) {
+        _viewModel = State(initialValue: viewModel)
+        self.onSave = onSave
+    }
 
     var body: some View {
+        @Bindable var viewModel = viewModel
+
         VStack {
-            ExpenseEditorHeaderView(
-                amount: $viewModel.amount,
-                selectedCategory: $viewModel.category
-            )
-            .onTapGesture {
+            Button {
                 withAnimation(.spring(response: 0.3, dampingFraction: 0.6)) {
                     showCategorySheet = true
                 }
                 UIImpactFeedbackGenerator(style: .light).impactOccurred()
+            } label: {
+                ExpenseEditorHeaderView(
+                    amount: $viewModel.amount,
+                    selectedCategory: $viewModel.category
+                )
             }
+            .buttonStyle(.plain)
+            .accessibilityLabel("選擇分類，目前為\(viewModel.category.rawValue)")
 
             Form {
                 Section(header: Text("")) {
@@ -78,30 +93,46 @@ struct ExpenseEditorSheet: View {
 
             Button {
                 Task {
-                    await viewModel.createExpense()
-                    dismiss()
+                    if await viewModel.createExpense() {
+                        await onSave()
+                        dismiss()
+                    }
                 }
             } label: {
-                Text("儲存")
-                    .font(.titleLarge)
-                    .foregroundStyle(.white)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 15)
-                    .background(
-                        RoundedRectangle(cornerRadius: 16)
-                            .fill(Color.Brand.primary)
-                    )
-                    .shadow(color: Color.Text.primary.opacity(0.15), radius: 16, x: 0, y: 1)
+                ZStack {
+                    Text("儲存")
+                        .opacity(viewModel.isSaving ? 0 : 1)
+
+                    if viewModel.isSaving {
+                        ProgressView()
+                            .tint(.white)
+                            .accessibilityLabel("儲存中")
+                    }
+                }
+                .font(.titleLarge)
+                .foregroundStyle(.white)
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 15)
+                .background(
+                    RoundedRectangle(cornerRadius: 16)
+                        .fill(Color.Brand.primary)
+                )
+                .shadow(color: Color.Text.primary.opacity(0.15), radius: 16, x: 0, y: 1)
             }
             .padding(.horizontal, 15)
-            .disabled(!viewModel.canSubmit)
-            .opacity(viewModel.canSubmit ? 1 : 0.5)
+            .disabled(!viewModel.canSubmit || viewModel.isSaving)
+            .opacity(viewModel.canSubmit && !viewModel.isSaving ? 1 : 0.5)
         }
         .sheet(isPresented: $showCategorySheet) {
             CategoryEditorSheet(selectedCategory: $viewModel.category,
                                 title: "支出")
                 .presentationDetents([.medium])
                 .presentationCornerRadius(16)
+        }
+        .alert("無法儲存", isPresented: $viewModel.isShowingSaveError) {
+            Button("好", role: .cancel) {}
+        } message: {
+            Text("資料尚未儲存，請稍後再試。")
         }
     }
 }
@@ -144,5 +175,14 @@ struct ExpenseEditorHeaderView: View {
 }
 
 #Preview {
-    ExpenseEditorSheet()
+    let container = try! ModelContainer(
+        for: Expense.self,
+        configurations: ModelConfiguration(isStoredInMemoryOnly: true)
+    )
+    let repository = ExpenseRepository(context: container.mainContext)
+
+    ExpenseEditorSheet(
+        viewModel: ExpenseEditorViewModel(repository: repository)
+    )
+    .modelContainer(container)
 }

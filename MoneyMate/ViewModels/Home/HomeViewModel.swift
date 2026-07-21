@@ -6,95 +6,125 @@
 //
 
 import Foundation
+import Observation
 import SwiftData
 
+enum HomeLoadState: Equatable {
+    case idle
+    case loading
+    case content
+    case empty
+    case failed
+}
+
 @MainActor
-final class HomeViewModel: ObservableObject {
-    private var useCase = HomeUseCase(repository: ExpenseRepository.init())
+@Observable
+final class HomeViewModel {
+    private let useCase: HomeUseCase
+    private let pageSize: Int
+    private var nextCursor: ExpensePageCursor?
+    private var hasNextPage = false
+    private var refreshGeneration = 0
 
-    /// 紀錄該頁是否滿足20筆資料
-    private var limitExpenses: [Expense] = []
-
-    /// 每月收入
-    @Published var monthlyIncome: Int = 0
-
-    /// 每月支出
-    @Published var monthlyExpense: Int = 0
-
-    /// 每月餘額
-    @Published var monthlyBalance: Int = 0
-
-    /// 每月收入支出清單
-    @Published var expenses: [Expense] = []
-
-    /// 是否顯示加載動畫
-    @Published var isLoadingNextPage: Bool = false
-
-    /// 強制刷新 ProgressView 的 ID
-    @Published var progressID = UUID()
-
-    var incomeText: String {
-        ["收入：", monthlyIncome.string].joinedString()
+    init(useCase: HomeUseCase, pageSize: Int = 20) {
+        self.useCase = useCase
+        self.pageSize = pageSize
     }
 
-    var expenditureText: String {
-        ["支出：", monthlyExpense.string].joinedString()
-    }
+    private(set) var displayedMonth = Date()
+    private(set) var monthlyIncome = 0
+    private(set) var monthlyExpense = 0
+    private(set) var monthlyBalance = 0
+    private(set) var expenses: [Expense] = []
+    private(set) var loadState: HomeLoadState = .idle
+    private(set) var isLoadingNextPage = false
+    private(set) var hasPaginationError = false
+    var isShowingOperationError = false
 
-    var currentMonthTitle: String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "yyyy-MM"
-        return "\(formatter.string(from: Date())) 結餘"
-    }
+    func refresh(for date: Date) async {
+        refreshGeneration += 1
+        let generation = refreshGeneration
 
-    /// 回傳每月統計結果
-    func fetchMonthlySummary(for date: Date) async {
-        let result = await useCase.fetchMonthlySummary(for: date)
-        monthlyIncome = result.income
-        monthlyExpense = result.expense
-        monthlyBalance = result.balance
-    }
-
-    /// 取得指定起始日期往後抓取指定 20 筆數的資料
-    func fetchMonthlyExpense(for date: Date) async {
-        let expenses = await useCase.fetchMonthlyExpense(for: date)
-        self.expenses = expenses
-        limitExpenses = expenses
-    }
-
-    /// 載入下一頁
-    func loadNextPageIfNeeded() async {
-        guard !isLoadingNextPage,
-              !expenses.isEmpty,
-              limitExpenses.count >= 20 else { return }
-
-        progressID = UUID()
-        isLoadingNextPage = true
+        displayedMonth = date
+        loadState = .loading
+        hasPaginationError = false
+        isShowingOperationError = false
+        isLoadingNextPage = false
+        nextCursor = nil
+        hasNextPage = false
 
         do {
-            try await Task.sleep(nanoseconds: 500_000_000)
+            let summary = try await useCase.fetchMonthlySummary(for: date)
+            try Task.checkCancellation()
+            let page = try await useCase.fetchMonthlyExpensePage(
+                for: date,
+                limit: pageSize
+            )
+            try Task.checkCancellation()
 
-            let lastDate = self.expenses[self.expenses.count - 1].date
-            let nextPage = await self.useCase.fetchMonthlyExpense(for: lastDate)
-            let newItems = nextPage.filter { !self.expenses.contains($0) }
-            if !newItems.isEmpty {
-                self.expenses.append(contentsOf: newItems)
-                self.limitExpenses = newItems
-            }
-            self.isLoadingNextPage = false
+            guard generation == refreshGeneration else { return }
+
+            monthlyIncome = summary.income
+            monthlyExpense = summary.expense
+            monthlyBalance = summary.balance
+            expenses = page.expenses
+            nextCursor = page.nextCursor
+            hasNextPage = page.hasMore
+            loadState = expenses.isEmpty ? .empty : .content
+        } catch is CancellationError {
+            return
         } catch {
-            self.isLoadingNextPage = false
+            guard generation == refreshGeneration else { return }
+            loadState = expenses.isEmpty ? .failed : .content
+            isShowingOperationError = !expenses.isEmpty
         }
     }
 
-    func addTestData() async {
-        await useCase.addTestData()
+    func loadNextPageIfNeeded(currentExpenseID: UUID) async {
+        guard currentExpenseID == expenses.last?.id,
+              hasNextPage,
+              !isLoadingNextPage,
+              let requestedCursor = nextCursor else {
+            return
+        }
+
+        isLoadingNextPage = true
+        hasPaginationError = false
+        defer { isLoadingNextPage = false }
+
+        do {
+            let page = try await useCase.fetchMonthlyExpensePage(
+                for: displayedMonth,
+                after: requestedCursor,
+                limit: pageSize
+            )
+            try Task.checkCancellation()
+
+            guard nextCursor == requestedCursor else { return }
+
+            let existingIDs = Set(expenses.map(\.id))
+            expenses.append(contentsOf: page.expenses.filter { !existingIDs.contains($0.id) })
+            nextCursor = page.nextCursor
+            hasNextPage = page.hasMore
+        } catch is CancellationError {
+            return
+        } catch {
+            hasPaginationError = true
+        }
     }
 
-    func deleteAt(at index: Int,to expense: Expense) async {
-        await useCase.deleteAt(expense.persistentModelID)
+    func retryNextPage() async {
+        guard let lastID = expenses.last?.id else { return }
+        await loadNextPageIfNeeded(currentExpenseID: lastID)
+    }
 
-        await fetchMonthlySummary(for: Date())
-        await fetchMonthlyExpense(for: Date())
+    func delete(_ expense: Expense) async {
+        do {
+            try await useCase.deleteExpense(expense.persistentModelID)
+            await refresh(for: displayedMonth)
+        } catch {
+            loadState = expenses.isEmpty ? .failed : .content
+            isShowingOperationError = !expenses.isEmpty
+        }
     }
 }

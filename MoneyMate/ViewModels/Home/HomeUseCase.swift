@@ -8,35 +8,69 @@
 import Foundation
 import SwiftData
 
-final class HomeUseCase {
-    private var repository: ExpenseRepositoryProtocol
+struct MonthlySummary: Equatable {
+    let income: Int
+    let expense: Int
 
-    init(repository: ExpenseRepositoryProtocol) {
+    var balance: Int { income + expense }
+}
+
+enum HomeUseCaseError: Error {
+    case invalidMonthInterval
+}
+
+@MainActor
+final class HomeUseCase {
+    private let repository: any ExpenseRepositoryProtocol
+    private let calendar: Calendar
+
+    init(
+        repository: any ExpenseRepositoryProtocol,
+        calendar: Calendar = .autoupdatingCurrent
+    ) {
         self.repository = repository
+        self.calendar = calendar
     }
 
     /// 回傳每月統計結果
-    func fetchMonthlySummary(for date: Date) async -> (income: Int, expense: Int, balance: Int) {
-        let expenses = await repository.fetchExpenses(from: date)
+    func fetchMonthlySummary(for date: Date) async throws -> MonthlySummary {
+        let expenses = try await repository.fetchExpenses(in: monthInterval(containing: date))
 
-        let income = expenses.filter { $0.amount > 0 }.map(\.amount).reduce(0, +)
-        let expense = expenses.filter { $0.amount < 0 }.map(\.amount).reduce(0, +)
+        var income = 0
+        var expense = 0
 
-        let balance = income + expense
-        return (income, expense, balance)
+        for item in expenses {
+            if item.amount > 0 {
+                income += item.amount
+            } else if item.amount < 0 {
+                expense += item.amount
+            }
+        }
+
+        return MonthlySummary(income: income, expense: expense)
     }
 
-    /// 取得指定起始日期往後抓取指定 20 筆數的資料
-    func fetchMonthlyExpense(for date: Date) async -> [Expense] {
-        let expenses = await repository.fetchExpenses(from: date)
-        return expenses
+    func fetchMonthlyExpensePage(
+        for date: Date,
+        after cursor: ExpensePageCursor? = nil,
+        limit: Int = 20
+    ) async throws -> ExpensePage {
+        try await repository.fetchExpensePage(
+            in: monthInterval(containing: date),
+            after: cursor,
+            limit: limit
+        )
     }
 
-    func deleteAt(_ id: PersistentIdentifier) async {
-        await repository.deleteByPersistentId(id)
+    func deleteExpense(_ id: PersistentIdentifier) async throws {
+        try await repository.deleteByPersistentId(id)
     }
 
-    func addTestData() async {
-        await repository.addTestData()
+    private func monthInterval(containing date: Date) throws -> DateInterval {
+        guard let interval = calendar.dateInterval(of: .month, for: date) else {
+            throw HomeUseCaseError.invalidMonthInterval
+        }
+
+        return interval
     }
 }

@@ -11,28 +11,11 @@ struct TransactionRowView: View {
     let expense: Expense
     let onDelete: EmptyClosure
 
-    @State private var offsetX: CGFloat = 0
-    private let deleteWidth: CGFloat = 80
-
-    @State private var isHorizontalDragging: Bool? = nil
-
     var amountColor: Color {
         expense.type == .expenditure ? .red : .black
     }
 
-    var formattedAmount: String {
-        NumberFormatter.currency.string(from: NSNumber(value: expense.amount)) ?? "\(expense.amount)"
-    }
-
-    var formattedDate: String {
-        DateFormatter.localized.string(from: expense.date)
-    }
-
     var body: some View {
-        rowContent
-    }
-
-    var rowContent: some View {
         HStack(spacing: 15) {
             ZStack {
                 Circle()
@@ -44,7 +27,7 @@ struct TransactionRowView: View {
             }
 
             VStack(alignment: .leading, spacing: 4) {
-                Text(formattedDate)
+                Text(expense.date, format: .dateTime.year().month().day())
                     .font(Font.bodyMedium)
                     .foregroundColor(Color.Text.secondary)
                 Text(expense.remark)
@@ -54,7 +37,7 @@ struct TransactionRowView: View {
 
             Spacer()
 
-            Text(formattedAmount)
+            Text(expense.amount, format: .number)
                 .font(Font.titleLarge)
                 .foregroundColor(amountColor)
         }
