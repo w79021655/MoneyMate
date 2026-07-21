@@ -1,0 +1,4 @@
+interface:
+  display_name: "中文 Commit Summary"
+  short_description: "根據 Git 變更撰寫清楚精簡的中文 commit summary"
+  default_prompt: "使用 $write-commit-summary 分析目前 Git 變更並產生中文 commit summary。"
