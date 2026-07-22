@@ -7,14 +7,17 @@
 
 import SwiftUI
 
+/// 集中定義 MoneyMate 的語意色彩 token。
 extension Color {
 
+    /// 品牌識別與主要互動元件使用的色彩。
     enum Brand {
         static let primary = Color(hex: "#2196F3")   // 藍色區塊
         static let accent = Color(hex: "#64B5F6")    // 進度條填滿
         static let subtleRGB = Color(r: 200, g: 200, b: 200, a: 0.3)
     }
 
+    /// 依文字用途區分的前景色彩。
     enum Text {
         static let primary = Color(hex: "#000000")   // 主文字的黑深色
         static let secondary = Color(hex: "#999999") // 次要主要文字
@@ -22,24 +25,29 @@ extension Color {
         static let negative = Color(hex: "#E53935") // 支出用紅色
     }
 
+    /// 畫面與卡片容器使用的背景色彩。
     enum Background {
         static let card = Color(hex: "#FFFFFF")
         static let screen = Color(hex: "#F5F5F5")
     }
 
+    /// 邊框與載入狀態使用的色彩。
     enum Border {
         static let loading = Color(hex: "#2196F3")
         static let subtle = Color(hex: "#E0E0E0")
     }
 
+    /// 陰影效果使用的色彩。
     enum Shadow {
         static let card = Color.black.opacity(0.03)
     }
 
+    /// 填滿型元件使用的色彩。
     enum Fill {
         static let progress = Color.Brand.accent
     }
 
+    /// 記帳分類圖示使用的代表色彩。
     enum Category {
         static let transport = Color(hex: "#42A5F5") // 交通
         static let game = Color(hex: "#FFB74D")      // 手遊
@@ -49,9 +57,13 @@ extension Color {
     }
 }
 
-// MARK: Hex
+// MARK: - 十六進位色碼
 
+/// 提供十六進位色碼的初始化介面。
 extension Color {
+    /// 將 RGB 或 RGBA 十六進位色碼轉成 sRGB 色彩。
+    /// - Parameter hex: 六碼 RGB 或八碼 RGBA 字串，可選擇是否包含 `#`。
+    /// - Important: 無法辨識的長度會回退為不透明白色。
     init(hex: String) {
         var hex = hex.trimmingCharacters(in: .whitespacesAndNewlines).uppercased()
         if hex.hasPrefix("#") { hex.removeFirst() }
@@ -79,9 +91,16 @@ extension Color {
     }
 }
 
-// MARK: RGBA
+// MARK: - RGBA 色彩分量
 
+/// 提供以 RGB 色彩分量建立色彩的初始化介面。
 extension Color {
+    /// 使用 0 至 255 的 RGB 分量與 0 至 1 的透明度建立 sRGB 色彩。
+    /// - Parameters:
+    ///   - r: 紅色分量。
+    ///   - g: 綠色分量。
+    ///   - b: 藍色分量。
+    ///   - a: 透明度，預設為完全不透明。
     init(r: Double, g: Double, b: Double, a: Double = 1.0) {
         self.init(
             .sRGB,

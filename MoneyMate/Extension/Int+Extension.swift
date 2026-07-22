@@ -8,17 +8,18 @@
 
 import Foundation
 
+/// 提供整數在畫面顯示與尺寸運算時的便利轉換。
 extension Int {
 
-    /// 將整數轉換為字串
+    /// 將整數轉換為字串。
     /// - Returns: 整數的字串表示。
     var string: String { String(self) }
 
-    /// 將整數轉換為 `CGFloat`
+    /// 將整數轉換為 `CGFloat`。
     /// - Returns: 與該整數值相等的 `CGFloat` 值。
     var cgfloat: CGFloat { CGFloat(self) }
 
-    /// 格式化整數為含千分位的字串
+    /// 將整數格式化為含千分位的字串。
     /// - Returns: 格式化後的字串，如 `"150000"` 轉換為 `"150,000"`，若格式化失敗則返回原數值的字串表示。
     /// - Note: 使用逗號作為千分位分隔符。
     func formatDecimal() -> String {

@@ -7,7 +7,9 @@
 
 import Foundation
 
+/// 提供 MoneyMate 預設的繁體中文日期格式器。
 extension DateFormatter {
+    /// 使用 `zh_TW` locale 並輸出「yyyy年M月d日」格式的共用 formatter。
     static let localized: DateFormatter = {
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "zh_TW")

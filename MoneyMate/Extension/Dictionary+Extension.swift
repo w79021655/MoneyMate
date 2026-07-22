@@ -7,6 +7,7 @@
 
 import Foundation
 
+/// 提供字典的 JSON `Data` 與 UTF-8 字串轉換能力。
 extension Dictionary {
 
     /// 將 `Dictionary` 轉換為 `Data`。

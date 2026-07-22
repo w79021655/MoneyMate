@@ -9,30 +9,40 @@ import Foundation
 import SwiftData
 import SwiftUI
 
+/// 表示一筆持久化的收入或支出紀錄。
 @Model
 class Expense: Identifiable, Equatable, Decodable {
 
-    /// 為一識別碼
+    /// 跨查詢與分頁維持穩定識別的 UUID。
     var id: UUID = UUID()
 
-    /// 收入支出的金額
+    /// 以整數儲存的記帳金額；收入為正值，支出為負值。
     var amount: Int
 
-    /// 消費種類
+    /// 使用者選擇的記帳分類。
     var category: Category
 
-    /// 收入支出類型
+    /// 記帳的收入或支出類型，必須與 `amount` 的正負號一致。
     var type: TransactionType
 
-    /// 消費日期
+    /// 用於月份查詢、排序與畫面顯示的記帳日期。
     var date: Date
 
-    /// 消費時間
+    /// 記錄使用者選擇的完整日期與時間。
     var dateTime: Date
 
-    /// 備註
+    /// 使用者輸入的記帳說明。
     var remark: String
 
+    /// 建立一筆收入或支出紀錄。
+    /// - Parameters:
+    ///   - id: 穩定識別碼，預設建立新的 UUID。
+    ///   - amount: 整數金額；收入使用正值，支出使用負值。
+    ///   - category: 記帳分類。
+    ///   - type: 收入或支出類型。
+    ///   - date: 查詢與顯示使用的記帳日期。
+    ///   - dateTime: 記帳的完整日期與時間。
+    ///   - remark: 使用者輸入的備註。
     init(
         id: UUID = UUID(),
         amount: Int,
@@ -51,7 +61,14 @@ class Expense: Identifiable, Equatable, Decodable {
         self.remark = remark
     }
 
+    /// 從既有 JSON 格式解碼記帳資料。
+    ///
+    /// 無法辨識的分類與類型會分別回退為 `.dining` 與 `.expenditure`；日期解析行為由 `String.convertToDate()` 決定。
+    ///
+    /// - Parameter decoder: 提供記帳欄位的 decoder。
+    /// - Throws: 必要欄位不存在或型別不符時拋出解碼錯誤。
     required convenience init(from decoder: Decoder) throws {
+        /// 定義 JSON payload 與 `Expense` 屬性的鍵值對應。
         enum CodingKeys: String, CodingKey {
             case id, amount, category, type, date, dateTime, remark
         }
@@ -79,5 +96,5 @@ class Expense: Identifiable, Equatable, Decodable {
     }
 }
 
-/// 自動指向 Expense.date
+/// 讓通用日期排序或篩選邏輯使用 `Expense.date` 作為日期來源。
 extension Expense: DateRepresentable {}

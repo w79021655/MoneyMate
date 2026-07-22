@@ -7,6 +7,7 @@
 
 import CoreFoundation
 
+/// 定義全 App 共用的圓角尺寸 token。
 enum Radius {
     static let radius4: CGFloat = 4
     static let radius8: CGFloat = 8

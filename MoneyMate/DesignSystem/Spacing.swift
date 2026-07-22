@@ -7,6 +7,7 @@
 
 import CoreFoundation
 
+/// 定義全 App 共用的間距尺寸 token。
 enum Spacing {
     static let spacing4: CGFloat = 4
     static let spacing8: CGFloat = 8

@@ -7,10 +7,15 @@
 
 import SwiftUI
 
+/// 組合首頁摘要與內容區，並負責啟動首次月份載入。
 struct HomeView: View {
     private let viewModel: HomeViewModel
     private let onAddExpense: EmptyClosure
 
+    /// 建立使用指定首頁狀態與新增記帳操作的畫面。
+    /// - Parameters:
+    ///   - viewModel: 首頁統計、列表與錯誤狀態的 source of truth。
+    ///   - onAddExpense: 使用者從空狀態要求新增記帳時執行的操作。
     init(
         viewModel: HomeViewModel,
         onAddExpense: @escaping EmptyClosure
@@ -48,6 +53,7 @@ struct HomeView: View {
     }
 }
 
+/// 依首頁載入狀態切換載入、空資料、錯誤或交易列表內容。
 private struct HomeContentView: View {
     let viewModel: HomeViewModel
     let onAddExpense: EmptyClosure
@@ -109,6 +115,7 @@ private struct HomeContentView: View {
     }
 }
 
+/// 顯示下一頁載入進度或分頁重試操作。
 private struct PaginationStatusView: View {
     let isLoading: Bool
     let hasError: Bool
@@ -129,6 +136,7 @@ private struct PaginationStatusView: View {
     }
 }
 
+/// 顯示首頁首次載入失敗狀態與重試操作。
 private struct HomeLoadErrorView: View {
     let onRetry: EmptyClosure
 

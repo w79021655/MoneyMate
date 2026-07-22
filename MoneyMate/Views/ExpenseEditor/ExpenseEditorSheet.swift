@@ -8,13 +8,17 @@
 import SwiftUI
 import SwiftData
 
-/// 編輯費用畫面
+/// 顯示新增記帳表單，並在儲存成功後通知呼叫端刷新資料。
 struct ExpenseEditorSheet: View {
     @Environment(\.dismiss) private var dismiss
     @State private var viewModel: ExpenseEditorViewModel
     @State private var showCategorySheet = false
     private let onSave: @MainActor () async -> Void
 
+    /// 建立使用指定草稿狀態的新增記帳表單。
+    /// - Parameters:
+    ///   - viewModel: 此次編輯流程專用的表單 ViewModel。
+    ///   - onSave: Repository 儲存成功後、關閉 sheet 前執行的非同步操作。
     init(
         viewModel: ExpenseEditorViewModel,
         onSave: @escaping @MainActor () async -> Void = {}
@@ -137,7 +141,7 @@ struct ExpenseEditorSheet: View {
     }
 }
 
-/// 編輯費用標題區塊
+/// 顯示目前分類與尚未套用收支正負號的輸入金額。
 struct ExpenseEditorHeaderView: View {
     @Binding var amount: Int?
     @Binding var selectedCategory: Category

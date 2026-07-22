@@ -9,6 +9,7 @@ import Foundation
 import Observation
 import SwiftData
 
+/// 描述首頁首次載入與主要內容的互斥狀態。
 enum HomeLoadState: Equatable {
     case idle
     case loading
@@ -17,30 +18,66 @@ enum HomeLoadState: Equatable {
     case failed
 }
 
+/// 管理首頁月份統計、交易列表、分頁與錯誤顯示狀態。
 @MainActor
 @Observable
 final class HomeViewModel {
+    /// 提供首頁業務操作的 UseCase。
     private let useCase: HomeUseCase
+
+    /// 每次分頁查詢最多載入的資料筆數。
     private let pageSize: Int
+
+    /// 下一頁查詢使用的穩定複合 cursor。
     private var nextCursor: ExpensePageCursor?
+
+    /// Repository 是否仍有尚未載入的資料。
     private var hasNextPage = false
+
+    /// 用來阻止較舊的 refresh 結果覆蓋較新的畫面狀態。
     private var refreshGeneration = 0
 
+    /// 建立首頁狀態管理器。
+    /// - Parameters:
+    ///   - useCase: 首頁統計與資料操作流程。
+    ///   - pageSize: 單頁最多載入筆數，預設為 20。
     init(useCase: HomeUseCase, pageSize: Int = 20) {
         self.useCase = useCase
         self.pageSize = pageSize
     }
 
+    /// 目前畫面統計與查詢所對應的月份基準日期。
     private(set) var displayedMonth = Date()
+
+    /// 當月收入合計。
     private(set) var monthlyIncome = 0
+
+    /// 當月支出合計，維持負值 convention。
     private(set) var monthlyExpense = 0
+
+    /// 當月收入與支出的代數和。
     private(set) var monthlyBalance = 0
+
+    /// 目前已載入並依 repository 順序排列的記帳資料。
     private(set) var expenses: [Expense] = []
+
+    /// 首頁首次載入與主要內容狀態。
     private(set) var loadState: HomeLoadState = .idle
+
+    /// 是否正在取得下一頁資料。
     private(set) var isLoadingNextPage = false
+
+    /// 上一次分頁請求是否失敗，可由使用者重試。
     private(set) var hasPaginationError = false
+
+    /// 控制已有內容時的一般操作錯誤提示。
     var isShowingOperationError = false
 
+    /// 重新載入指定月份的完整統計與第一頁資料。
+    ///
+    /// 使用 generation token 與 cancellation 檢查，避免舊請求覆蓋較新的 refresh 結果。
+    ///
+    /// - Parameter date: 用來決定顯示月份的基準日期。
     func refresh(for date: Date) async {
         refreshGeneration += 1
         let generation = refreshGeneration
@@ -80,6 +117,8 @@ final class HomeViewModel {
         }
     }
 
+    /// 當指定記帳是目前列表最後一筆時，視需要載入下一頁。
+    /// - Parameter currentExpenseID: 觸發 row 的穩定 UUID。
     func loadNextPageIfNeeded(currentExpenseID: UUID) async {
         guard currentExpenseID == expenses.last?.id,
               hasNextPage,
@@ -113,11 +152,14 @@ final class HomeViewModel {
         }
     }
 
+    /// 從目前列表最後一筆重新嘗試載入下一頁。
     func retryNextPage() async {
         guard let lastID = expenses.last?.id else { return }
         await loadNextPageIfNeeded(currentExpenseID: lastID)
     }
 
+    /// 刪除指定記帳，成功後重新載入目前月份。
+    /// - Parameter expense: 要刪除的 SwiftData model。
     func delete(_ expense: Expense) async {
         do {
             try await useCase.deleteExpense(expense.persistentModelID)

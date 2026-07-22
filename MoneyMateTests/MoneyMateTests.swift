@@ -10,13 +10,16 @@ import Testing
 @testable import MoneyMate
 import SwiftData
 
+/// 驗證 MoneyMate persistence、首頁業務流程與編輯器錯誤狀態。
 struct MoneyMateTests {
+    /// 使用固定 UTC 時區，避免月份邊界因測試環境而改變。
     private let calendar: Calendar = {
         var calendar = Calendar(identifier: .gregorian)
         calendar.timeZone = TimeZone(secondsFromGMT: 0)!
         return calendar
     }()
 
+    /// 驗證 repository 只使用注入的 in-memory context，並遵守月份區間。
     @MainActor
     @Test func repositoryUsesInjectedModelContextAndMonthInterval() async throws {
         let container = try ModelContainer(
@@ -37,6 +40,7 @@ struct MoneyMateTests {
         #expect(result.first?.amount == 550)
     }
 
+    /// 驗證月統計涵蓋當月全部資料，且不受 repository 分頁大小影響。
     @MainActor
     @Test func homeUseCaseCalculatesAllRecordsInRequestedMonth() async throws {
         let januaryDate = makeDate(year: 2026, month: 1, day: 15)
@@ -59,6 +63,7 @@ struct MoneyMateTests {
         #expect(result.balance == 820)
     }
 
+    /// 驗證相同 timestamp 的資料可透過複合 cursor 完整分頁且不重複。
     @MainActor
     @Test func repositoryPaginationDoesNotSkipEqualTimestamps() async throws {
         let container = try ModelContainer(
@@ -92,6 +97,7 @@ struct MoneyMateTests {
         #expect(Set(fetchedIDs).count == 25)
     }
 
+    /// 驗證首次載入失敗時首頁進入 failed state。
     @MainActor
     @Test func homeViewModelExposesFailureState() async {
         let repository = MockExpenseRepository()
@@ -104,6 +110,7 @@ struct MoneyMateTests {
         #expect(viewModel.loadState == .failed)
     }
 
+    /// 驗證編輯器儲存失敗時顯示錯誤，且不宣告成功或新增資料。
     @MainActor
     @Test func editorReportsSaveFailureWithoutClaimingSuccess() async {
         let repository = MockExpenseRepository()
@@ -119,10 +126,12 @@ struct MoneyMateTests {
         #expect(repository.expenses.isEmpty)
     }
 
+    /// 使用測試固定的 calendar 建立日期。
     private func makeDate(year: Int, month: Int, day: Int) -> Date {
         calendar.date(from: DateComponents(year: year, month: month, day: day))!
     }
 
+    /// 建立符合金額正負號 convention 的測試記帳資料。
     private func makeExpense(amount: Int, date: Date) -> Expense {
         Expense(
             amount: amount,

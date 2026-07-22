@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-/// 類型選擇畫面
+/// 顯示所有記帳分類，並將使用者選擇回寫至呼叫端 binding。
 struct CategoryEditorSheet: View {
     @Binding var selectedCategory: Category
     let title: String
@@ -45,6 +45,7 @@ struct CategoryEditorSheet: View {
     }
 }
 
+/// 顯示單一分類的圖示、名稱與目前選取狀態。
 struct CategoryEditorRowView: View {
     let category: Category
     @Binding var selectedCategory: Category

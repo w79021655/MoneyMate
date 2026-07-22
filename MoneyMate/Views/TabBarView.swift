@@ -8,10 +8,13 @@
 import SwiftUI
 import SwiftData
 
+/// 管理 App 主要分頁與新增記帳 sheet 的根畫面。
 struct TabBarView: View {
+    /// 表示底部工具列可切換的主要頁面。
     enum Tab: Int {
         case home, grid, search
 
+        /// VoiceOver 朗讀分頁按鈕時使用的在地化名稱。
         var accessibilityLabel: LocalizedStringResource {
             switch self {
             case .home: "首頁"
@@ -34,9 +37,11 @@ struct TabBarView: View {
                         onAddExpense: { isShowingAddSheet = true }
                     )
                 case .grid:
-                    Color.white // TODO: Replace with your real Grid view
+                    // TODO: 以正式的分類頁取代目前的空白預留畫面。
+                    Color.white
                 case .search:
-                    Color.white // TODO: Replace with your real Search view
+                    // TODO: 以正式的搜尋頁取代目前的空白預留畫面。
+                    Color.white
                 }
             }
             .toolbar {
@@ -69,6 +74,11 @@ struct TabBarView: View {
         }
     }
 
+    /// 建立具有選取狀態、動畫與 VoiceOver label 的工具列分頁按鈕。
+    /// - Parameters:
+    ///   - tab: 按鈕代表的目標分頁。
+    ///   - systemName: 顯示使用的 SF Symbol 名稱。
+    /// - Returns: 點擊後更新 `selected` 的分頁按鈕。
     @ViewBuilder
     private func tabButton(_ tab: Tab, systemName: String) -> some View {
         let isSelected = (selected == tab)

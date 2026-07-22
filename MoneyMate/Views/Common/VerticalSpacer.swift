@@ -7,6 +7,7 @@
 
 import SwiftUI
 
+/// 以明確寬高建立固定空白區域的版面輔助 View。
 struct VerticalSpacer: View {
     let width: CGFloat
     let height: CGFloat

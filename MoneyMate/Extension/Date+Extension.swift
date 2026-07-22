@@ -7,11 +7,12 @@
 
 import Foundation
 
+/// 將常用日期運算與格式轉換代理至共用的 `DateHelper`。
 extension Date {
 
-    /// 針對當前日期做天數 +, -
-    /// - Parameter interval: 天數
-    /// - Returns: Date
+    /// 將目前日期往前或往後移動指定天數。
+    /// - Parameter interval: 位移天數；正值往後，負值往前。
+    /// - Returns: 位移後的日期；無法計算時由 `DateHelper` 回退為目前時間。
     func addDay(for interval: Int) -> Date { dateHelper.addDay(to: self, for: interval) }
 
     /// 計算起始日期與結束日期之間的天數差異。
@@ -23,9 +24,9 @@ extension Date {
         dateHelper.dateCompare(startDate: self, endDate: endDate, dateFormat: dateFormat)
     }
 
-    /// 將`Date`轉換為指定`String`日期格式
-    /// - Parameter dateFormat: 日期格式
-    /// - Returns: 轉換成功的 `Date`，解析失敗則回傳 `nil`
+    /// 將日期轉換為指定格式的字串。
+    /// - Parameter dateFormat: `DateFormat` 支援的日期格式字串。
+    /// - Returns: 格式化後的日期字串。
     func convertToString(dateFormat: String = "yyyy/MM/dd") -> String? {
         dateHelper.convertFlexibleDateFormatToString(date: self, to: DateFormat(rawValue: dateFormat) ?? .fullDateTimeWithSecondsSlash)
     }

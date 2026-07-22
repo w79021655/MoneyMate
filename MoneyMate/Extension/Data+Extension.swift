@@ -7,6 +7,7 @@
 
 import Foundation
 
+/// 提供 UTF-8 文字與 JSON 字典的便利轉換。
 extension Data {
 
     /// 將 `Data` 轉換為字串。

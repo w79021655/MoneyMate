@@ -9,34 +9,45 @@ import Foundation
 import SwiftData
 @testable import MoneyMate
 
+/// 表示測試主動要求 mock repository 模擬失敗。
 enum MockExpenseRepositoryError: Error {
     case requestedFailure
 }
 
+/// 在記憶體中模擬 `ExpenseRepositoryProtocol`，供 UseCase 與 ViewModel 測試隔離 persistence。
 @MainActor
 final class MockExpenseRepository: ExpenseRepositoryProtocol {
+    /// Mock 目前持有的記帳資料。
     private(set) var expenses: [Expense]
+
+    /// 設為 `true` 時，所有操作都會拋出 `requestedFailure`。
     var shouldFail = false
 
+    /// 建立具有指定初始資料的 mock repository。
+    /// - Parameter expenses: 測試開始時可查詢的記帳資料。
     init(expenses: [Expense] = []) {
         self.expenses = expenses
     }
 
+    /// 模擬新增記帳，或依 `shouldFail` 拋出錯誤。
     func addExpense(_ expense: Expense) async throws {
         try throwIfNeeded()
         expenses.append(expense)
     }
 
+    /// 模擬刪除所有記帳，或依 `shouldFail` 拋出錯誤。
     func deleteAll() async throws {
         try throwIfNeeded()
         expenses.removeAll()
     }
 
+    /// 模擬依 persistent identifier 刪除記帳。
     func deleteByPersistentId(_ id: PersistentIdentifier) async throws {
         try throwIfNeeded()
         expenses.removeAll { $0.persistentModelID == id }
     }
 
+    /// 模擬查詢半開日期區間 `[start, end)` 內的所有記帳。
     func fetchExpenses(in interval: DateInterval) async throws -> [Expense] {
         try throwIfNeeded()
         return expenses.filter {
@@ -44,6 +55,7 @@ final class MockExpenseRepository: ExpenseRepositoryProtocol {
         }
     }
 
+    /// 使用與 production repository 相同的日期與 UUID 複合順序模擬分頁。
     func fetchExpensePage(
         in interval: DateInterval,
         after cursor: ExpensePageCursor?,
@@ -82,6 +94,7 @@ final class MockExpenseRepository: ExpenseRepositoryProtocol {
         )
     }
 
+    /// 在測試要求失敗時拋出固定錯誤。
     private func throwIfNeeded() throws {
         if shouldFail {
             throw MockExpenseRepositoryError.requestedFailure

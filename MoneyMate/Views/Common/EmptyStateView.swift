@@ -7,6 +7,7 @@
 
 import SwiftUI
 
+/// 顯示沒有內容時的圖示、說明與可選主要操作。
 struct EmptyStateView: View {
     let title: String
     let message: String

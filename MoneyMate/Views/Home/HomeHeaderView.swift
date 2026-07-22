@@ -7,6 +7,7 @@
 
 import SwiftUI
 
+/// 顯示目前月份的餘額、收入與支出摘要。
 struct HomeHeaderView: View {
     let month: Date
     let balance: Int
@@ -48,6 +49,7 @@ struct HomeHeaderView: View {
 
 }
 
+/// 顯示首頁摘要中的收入與支出合計。
 private struct IncomeExpenditureView: View {
     let income: Int
     let expenditure: Int
@@ -74,10 +76,14 @@ private struct IncomeExpenditureView: View {
     }
 }
 
+/// 只對指定角落套用圓角的自訂 Shape。
 struct RoundedCorner: Shape {
     var radius: CGFloat = .infinity
     var corners: UIRectCorner = .allCorners
 
+    /// 建立符合指定半徑與角落集合的路徑。
+    /// - Parameter rect: SwiftUI 提供的繪製範圍。
+    /// - Returns: 由 `UIBezierPath` 轉換的 SwiftUI `Path`。
     func path(in rect: CGRect) -> Path {
         let path = UIBezierPath(
             roundedRect: rect,

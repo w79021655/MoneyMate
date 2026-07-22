@@ -7,8 +7,9 @@
 
 import Foundation
 
-// MARK: General Extension
+// MARK: - 通用陣列能力
 
+/// 提供陣列的空值判斷與 JSON 序列化便利介面。
 extension Array {
 
     /// 回傳一個空陣列。
@@ -21,8 +22,9 @@ extension Array {
     var data: Data? { try? JSONSerialization.data(withJSONObject: self, options: .prettyPrinted) }
 }
 
-// MARK: String-Specific Extension
+// MARK: - 字串陣列
 
+/// 提供非可選字串陣列的清理與組合能力。
 extension Array where Element == String {
 
     /// 將陣列中的字串依指定的分隔符組合成一個地址字串。
@@ -35,6 +37,7 @@ extension Array where Element == String {
     }
 }
 
+/// 提供可選字串陣列的清理與組合能力，組合前會略過 `nil`。
 extension Array where Element == String? {
 
     /// 將陣列中的字串依指定的分隔符組合成一個地址字串。

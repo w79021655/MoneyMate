@@ -9,28 +9,60 @@ import SwiftUI
 import Foundation
 import SwiftData
 
+/// 表示分頁查詢中最後一筆記帳的穩定位置。
+///
+/// 日期與 UUID 必須和 repository 的複合排序順序一致。
 struct ExpensePageCursor: Equatable {
+    /// 上一頁最後一筆記帳的日期排序值。
     let date: Date
+
+    /// 日期相同時用來維持穩定順序的第二排序值。
     let id: UUID
 }
 
+/// 封裝一頁記帳結果與下一頁狀態。
 struct ExpensePage {
+    /// 本頁依 repository 規定順序排列的記帳資料。
     let expenses: [Expense]
+
+    /// 下一次查詢應傳入的位置；本頁無資料時可能為 `nil`。
     let nextCursor: ExpensePageCursor?
+
+    /// 是否仍有尚未載入的後續資料。
     let hasMore: Bool
 }
 
+/// 定義 Main Actor 上的記帳 persistence 操作 contract。
 @MainActor
 protocol ExpenseRepositoryProtocol {
 
+    /// 新增並儲存一筆記帳。
+    /// - Parameter expense: 要新增的記帳資料。
+    /// - Throws: Persistence 寫入失敗時拋出錯誤。
     func addExpense(_ expense: Expense) async throws
 
+    /// 刪除所有記帳資料。
+    /// - Throws: Persistence 查詢或寫入失敗時拋出錯誤。
     func deleteAll() async throws
 
+    /// 依 persistent identifier 刪除記帳。
+    /// - Parameter id: 目標記帳的 SwiftData identifier。
+    /// - Throws: Persistence 寫入失敗時拋出錯誤。
     func deleteByPersistentId(_ id: PersistentIdentifier) async throws
 
+    /// 查詢半開日期區間 `[start, end)` 內的所有記帳。
+    /// - Parameter interval: 要查詢的日期區間。
+    /// - Returns: 符合條件的記帳；呼叫端不得假設結果順序。
+    /// - Throws: Persistence 查詢失敗時拋出錯誤。
     func fetchExpenses(in interval: DateInterval) async throws -> [Expense]
 
+    /// 取得日期區間內、位於指定 cursor 之後的一頁記帳。
+    /// - Parameters:
+    ///   - interval: 要查詢的半開日期區間 `[start, end)`。
+    ///   - cursor: 上一頁位置；`nil` 表示第一頁。
+    ///   - limit: 單頁最多回傳筆數。
+    /// - Returns: 分頁資料與下一頁狀態。
+    /// - Throws: Persistence 查詢失敗時拋出錯誤。
     func fetchExpensePage(
         in interval: DateInterval,
         after cursor: ExpensePageCursor?,
@@ -38,6 +70,7 @@ protocol ExpenseRepositoryProtocol {
     ) async throws -> ExpensePage
 }
 
+/// 區分記帳資料屬於支出或收入。
 enum TransactionType: String, CaseIterable, Identifiable, Codable {
 
     /// 支出
@@ -49,6 +82,7 @@ enum TransactionType: String, CaseIterable, Identifiable, Codable {
     var id: String { self.rawValue }
 }
 
+/// 列出 MoneyMate 可選擇的記帳分類與其 UI metadata。
 enum Category: String, CaseIterable, Identifiable, Codable {
     case dining = "吃飯"
     case clothing = "服裝"
@@ -83,6 +117,7 @@ enum Category: String, CaseIterable, Identifiable, Codable {
 
     var id: String { self.rawValue }
 
+    /// 分類在畫面上使用的 SF Symbol 名稱。
     var systemImageName: String {
         switch self {
         case .dining: "fork.knife"
@@ -118,6 +153,7 @@ enum Category: String, CaseIterable, Identifiable, Codable {
         }
     }
 
+    /// 分類在畫面上使用的代表色彩。
     var color: Color {
         switch self {
         case .dining: return .orange
