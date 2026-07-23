@@ -7,19 +7,33 @@ import SwiftData
 /// 資料只會編譯進 Debug build，並應搭配獨立的 in-memory `ModelContainer` 使用。
 @MainActor
 enum MockExpenseData {
-    static let expenseCount = 45
+    /// 本月保留較多資料，用來驗證首頁分頁。
+    static let currentMonthExpenseCount = 45
 
-    /// 產生指定日期所在月份的固定筆數記帳資料。
+    /// 每個歷史月份產生的資料筆數。
+    static let historicalMonthExpenseCount = 8
+
+    /// 假資料涵蓋本月與前 13 個月，必定跨越年至少一次。
+    static let coveredMonthCount = 14
+
+    /// 完整假資料筆數。
+    static let expenseCount =
+        currentMonthExpenseCount +
+        historicalMonthExpenseCount * (coveredMonthCount - 1)
+
+    /// 產生涵蓋最近 14 個月份的固定記帳資料。
     /// - Parameters:
-    ///   - referenceDate: 決定假資料所屬月份的日期。
-    ///   - calendar: 建立月份內日期時使用的日曆。
-    /// - Returns: 具有穩定 UUID、正確金額正負號與虛構備註的 45 筆資料。
+    ///   - referenceDate: 決定假資料最後一個月份的日期。
+    ///   - calendar: 建立月份與日期時使用的日曆。
+    /// - Returns: 具有穩定 UUID、正確金額正負號，且跨月、跨年的 149 筆資料。
     static func makeExpenses(
         referenceDate: Date = Date(),
         calendar: Calendar = .autoupdatingCurrent
     ) -> [Expense] {
-        guard let monthInterval = calendar.dateInterval(of: .month, for: referenceDate),
-              let dayRange = calendar.range(of: .day, in: .month, for: referenceDate) else {
+        guard let referenceMonth = calendar.dateInterval(
+            of: .month,
+            for: referenceDate
+        )?.start else {
             return []
         }
 
@@ -35,55 +49,90 @@ enum MockExpenseData {
         let incomeRemarks = ["本月薪資", "專案獎金", "股息收入"]
         let incomeAmounts = [52_000, 6_800, 1_250]
 
-        return (0..<expenseCount).compactMap { index in
-            let day = dayRange.lowerBound + (index % dayRange.count)
-            let hour = 8 + (index * 3 % 14)
-            let minute = index * 7 % 60
-            guard let dayDate = calendar.date(
-                byAdding: .day,
-                value: day - 1,
-                to: monthInterval.start
+        let monthOffsets = (-(coveredMonthCount - 1))...0
+
+        return monthOffsets.flatMap { monthOffset -> [Expense] in
+            guard let monthStart = calendar.date(
+                byAdding: .month,
+                value: monthOffset,
+                to: referenceMonth
             ),
-            let date = calendar.date(
-                bySettingHour: hour,
-                minute: minute,
-                second: 0,
-                of: dayDate
-            ),
-            let id = UUID(uuidString: String(format: "00000000-0000-4000-8000-%012d", index + 1)) else {
-                return nil
+            let dayRange = calendar.range(
+                of: .day,
+                in: .month,
+                for: monthStart
+            ) else {
+                return []
             }
 
-            let isIncome = index.isMultiple(of: 8)
-            if isIncome {
-                let incomeIndex = (index / 8) % incomeAmounts.count
+            let count = monthOffset == 0
+                ? currentMonthExpenseCount
+                : historicalMonthExpenseCount
+            let monthPosition = monthOffset + coveredMonthCount - 1
+
+            return (0..<count).compactMap { itemIndex in
+                let globalIndex =
+                    monthPosition * currentMonthExpenseCount + itemIndex
+                let day = dayRange.lowerBound + (
+                    (itemIndex * 3 + monthPosition) % dayRange.count
+                )
+                let hour = 8 + (itemIndex * 3 % 14)
+                let minute = (itemIndex * 7 + monthPosition) % 60
+                guard let dayDate = calendar.date(
+                    byAdding: .day,
+                    value: day - 1,
+                    to: monthStart
+                ),
+                let date = calendar.date(
+                    bySettingHour: hour,
+                    minute: minute,
+                    second: 0,
+                    of: dayDate
+                ),
+                let id = UUID(
+                    uuidString: String(
+                        format: "00000000-0000-4000-8000-%012d",
+                        globalIndex + 1
+                    )
+                ) else {
+                    return nil
+                }
+
+                let isIncome = itemIndex.isMultiple(of: 7)
+                if isIncome {
+                    let incomeIndex = (
+                        itemIndex / 7 + monthPosition
+                    ) % incomeAmounts.count
+                    return Expense(
+                        id: id,
+                        amount: incomeAmounts[incomeIndex],
+                        category: incomeIndex == 0 ? .salary : .dividend,
+                        type: .income,
+                        date: date,
+                        dateTime: date,
+                        remark: incomeRemarks[incomeIndex]
+                    )
+                }
+
+                let expenseIndex = (
+                    itemIndex + monthPosition
+                ) % expenseAmounts.count
                 return Expense(
                     id: id,
-                    amount: incomeAmounts[incomeIndex],
-                    category: incomeIndex == 0 ? .salary : .dividend,
-                    type: .income,
+                    amount: -expenseAmounts[expenseIndex],
+                    category: expenseCategories[expenseIndex],
+                    type: .expenditure,
                     date: date,
                     dateTime: date,
-                    remark: incomeRemarks[incomeIndex]
+                    remark: expenseRemarks[expenseIndex]
                 )
             }
-
-            let expenseIndex = index % expenseAmounts.count
-            return Expense(
-                id: id,
-                amount: -expenseAmounts[expenseIndex],
-                category: expenseCategories[expenseIndex],
-                type: .expenditure,
-                date: date,
-                dateTime: date,
-                remark: expenseRemarks[expenseIndex]
-            )
         }
     }
 
     /// 建立已載入畫面假資料的獨立 in-memory container。
     /// - Parameter referenceDate: 決定假資料所屬月份的日期。
-    /// - Returns: 已儲存 45 筆假資料且不會寫入正式 store 的 container。
+    /// - Returns: 已儲存跨月、跨年假資料且不會寫入正式 store 的 container。
     /// - Throws: Container 建立或假資料儲存失敗時拋出錯誤。
     static func makeModelContainer(
         referenceDate: Date = Date()

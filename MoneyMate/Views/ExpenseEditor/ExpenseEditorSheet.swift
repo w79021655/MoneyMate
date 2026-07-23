@@ -13,7 +13,7 @@ struct ExpenseEditorSheet: View {
     @Environment(\.dismiss) private var dismiss
     @State private var viewModel: ExpenseEditorViewModel
     @State private var showCategorySheet = false
-    private let onSave: @MainActor () async -> Void
+    private let onSave: @MainActor (Date) async -> Void
 
     /// 建立使用指定草稿狀態的新增記帳表單。
     /// - Parameters:
@@ -21,7 +21,7 @@ struct ExpenseEditorSheet: View {
     ///   - onSave: Repository 儲存成功後、關閉 sheet 前執行的非同步操作。
     init(
         viewModel: ExpenseEditorViewModel,
-        onSave: @escaping @MainActor () async -> Void = {}
+        onSave: @escaping @MainActor (Date) async -> Void = { _ in }
     ) {
         _viewModel = State(initialValue: viewModel)
         self.onSave = onSave
@@ -98,7 +98,7 @@ struct ExpenseEditorSheet: View {
             Button {
                 Task {
                     if await viewModel.createExpense() {
-                        await onSave()
+                        await onSave(viewModel.date)
                         dismiss()
                     }
                 }

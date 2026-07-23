@@ -29,7 +29,7 @@ struct TransactionRowView: View {
             }
 
             VStack(alignment: .leading, spacing: 4) {
-                Text(expense.date, format: .dateTime.year().month().day())
+                Text(verbatim: expense.date.formatted(AppDateFormat.yearMonthDay))
                     .font(Font.bodyMedium)
                     .foregroundColor(Color.Text.secondary)
                 Text(expense.remark)

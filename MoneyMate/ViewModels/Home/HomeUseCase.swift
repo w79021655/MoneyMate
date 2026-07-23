@@ -86,6 +86,51 @@ final class HomeUseCase {
         )
     }
 
+    /// 取得資料庫中最早一筆記帳所屬月份的起始時間。
+    /// - Returns: 最早記帳月份；沒有資料時回傳 `nil`。
+    func fetchEarliestExpenseMonth() async throws -> Date? {
+        guard let earliestDate = try await repository.fetchEarliestExpenseDate() else {
+            return nil
+        }
+
+        return try startOfMonth(containing: earliestDate)
+    }
+
+    /// 取得資料庫中最晚一筆記帳所屬月份的起始時間。
+    /// - Returns: 最晚記帳月份；沒有資料時回傳 `nil`。
+    func fetchLatestExpenseMonth() async throws -> Date? {
+        guard let latestDate = try await repository.fetchLatestExpenseDate() else {
+            return nil
+        }
+
+        return try startOfMonth(containing: latestDate)
+    }
+
+    /// 將日期正規化為所屬月份的起始時間。
+    /// - Parameter date: 任意月份內的日期。
+    /// - Returns: 由注入 Calendar 計算的月份起始時間。
+    func startOfMonth(containing date: Date) throws -> Date {
+        guard let interval = calendar.dateInterval(of: .month, for: date) else {
+            throw HomeUseCaseError.invalidMonthInterval
+        }
+
+        return interval.start
+    }
+
+    /// 從指定月份向前或向後移動月份。
+    /// - Parameters:
+    ///   - value: 月份位移量；負值往前，正值往後。
+    ///   - date: 位移基準日期。
+    /// - Returns: 位移後月份的起始時間。
+    func month(byAdding value: Int, to date: Date) throws -> Date {
+        let month = try startOfMonth(containing: date)
+        guard let shiftedDate = calendar.date(byAdding: .month, value: value, to: month) else {
+            throw HomeUseCaseError.invalidMonthInterval
+        }
+
+        return try startOfMonth(containing: shiftedDate)
+    }
+
     /// 刪除指定 persistent identifier 的記帳。
     /// - Parameter id: 要刪除的 SwiftData identifier。
     /// - Throws: Repository 無法完成刪除時拋出錯誤。
@@ -98,10 +143,8 @@ final class HomeUseCase {
     /// - Returns: 由注入 calendar 計算的完整月份區間。
     /// - Throws: Calendar 無法建立月份區間時拋出 `HomeUseCaseError.invalidMonthInterval`。
     private func monthInterval(containing date: Date) throws -> DateInterval {
-        guard let interval = calendar.dateInterval(of: .month, for: date) else {
-            throw HomeUseCaseError.invalidMonthInterval
-        }
-
-        return interval
+        let start = try startOfMonth(containing: date)
+        let end = try month(byAdding: 1, to: start)
+        return DateInterval(start: start, end: end)
     }
 }

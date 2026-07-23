@@ -30,9 +30,28 @@ struct HomeView: View {
         VStack {
             HomeHeaderView(
                 month: viewModel.displayedMonth,
+                earliestSelectableMonth: viewModel.earliestSelectableMonth,
+                latestSelectableMonth: viewModel.latestSelectableMonth,
+                canSelectPreviousMonth: viewModel.canSelectPreviousMonth,
+                canSelectNextMonth: viewModel.canSelectNextMonth,
                 balance: viewModel.monthlyBalance,
                 income: viewModel.monthlyIncome,
-                expenditure: viewModel.monthlyExpense
+                expenditure: viewModel.monthlyExpense,
+                onPreviousMonth: {
+                    Task {
+                        await viewModel.selectPreviousMonth()
+                    }
+                },
+                onNextMonth: {
+                    Task {
+                        await viewModel.selectNextMonth()
+                    }
+                },
+                onSelectMonth: { month in
+                    Task {
+                        await viewModel.selectMonth(month)
+                    }
+                }
             )
 
             HomeContentView(
@@ -66,8 +85,8 @@ private struct HomeContentView: View {
 
         case .empty:
             EmptyStateView(
-                title: "目前沒有任何記帳",
-                message: "開始新增第一筆收支紀錄吧！",
+                title: "這個月份沒有記帳",
+                message: "可以新增一筆收支紀錄。",
                 systemImage: "doc.text.magnifyingglass",
                 action: onAddExpense
             )

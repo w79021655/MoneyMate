@@ -7,6 +7,22 @@
 
 import Foundation
 
+/// MoneyMate 畫面統一使用的繁體中文日期格式。
+enum AppDateFormat {
+    /// 僅顯示年月，例如「2025年8月」。
+    static let yearMonth = Date.FormatStyle.dateTime
+        .year()
+        .month()
+        .locale(Locale(identifier: "zh_TW"))
+
+    /// 顯示年月日，例如「2025年8月24日」。
+    static let yearMonthDay = Date.FormatStyle.dateTime
+        .year()
+        .month()
+        .day()
+        .locale(Locale(identifier: "zh_TW"))
+}
+
 /// 將常用日期運算與格式轉換代理至共用的 `DateHelper`。
 extension Date {
 

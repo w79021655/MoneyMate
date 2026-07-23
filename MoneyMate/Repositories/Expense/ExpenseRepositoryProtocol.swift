@@ -56,6 +56,16 @@ protocol ExpenseRepositoryProtocol {
     /// - Throws: Persistence 查詢失敗時拋出錯誤。
     func fetchExpenses(in interval: DateInterval) async throws -> [Expense]
 
+    /// 取得所有記帳中日期最早的一筆。
+    /// - Returns: 最早記帳日期；沒有任何資料時回傳 `nil`。
+    /// - Throws: Persistence 查詢失敗時拋出錯誤。
+    func fetchEarliestExpenseDate() async throws -> Date?
+
+    /// 取得所有記帳中日期最晚的一筆。
+    /// - Returns: 最晚記帳日期；沒有任何資料時回傳 `nil`。
+    /// - Throws: Persistence 查詢失敗時拋出錯誤。
+    func fetchLatestExpenseDate() async throws -> Date?
+
     /// 取得日期區間內、位於指定 cursor 之後的一頁記帳。
     /// - Parameters:
     ///   - interval: 要查詢的半開日期區間 `[start, end)`。

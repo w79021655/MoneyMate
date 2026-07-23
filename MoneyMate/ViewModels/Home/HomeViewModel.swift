@@ -28,6 +28,9 @@ final class HomeViewModel {
     /// 每次分頁查詢最多載入的資料筆數。
     private let pageSize: Int
 
+    /// 提供目前時間，讓永遠包含在選擇範圍內的本月可在測試中固定。
+    private let now: () -> Date
+
     /// 下一頁查詢使用的穩定複合 cursor。
     private var nextCursor: ExpensePageCursor?
 
@@ -41,13 +44,40 @@ final class HomeViewModel {
     /// - Parameters:
     ///   - useCase: 首頁統計與資料操作流程。
     ///   - pageSize: 單頁最多載入筆數，預設為 20。
-    init(useCase: HomeUseCase, pageSize: Int = 20) {
+    init(
+        useCase: HomeUseCase,
+        pageSize: Int = 20,
+        now: @escaping () -> Date = Date.init
+    ) {
         self.useCase = useCase
         self.pageSize = pageSize
+        self.now = now
+
+        let currentDate = now()
+        let currentMonth = (try? useCase.startOfMonth(containing: currentDate)) ?? currentDate
+        self.displayedMonth = currentMonth
+        self.earliestSelectableMonth = currentMonth
+        self.latestSelectableMonth = currentMonth
     }
 
     /// 目前畫面統計與查詢所對應的月份基準日期。
-    private(set) var displayedMonth = Date()
+    private(set) var displayedMonth: Date
+
+    /// 月份選擇器允許的最早月份。
+    private(set) var earliestSelectableMonth: Date
+
+    /// 月份選擇器允許的最晚月份，取本月與最晚記帳月份的較晚者。
+    private(set) var latestSelectableMonth: Date
+
+    /// 是否能切換到上一個月份。
+    var canSelectPreviousMonth: Bool {
+        displayedMonth > earliestSelectableMonth
+    }
+
+    /// 是否能切換到下一個月份。
+    var canSelectNextMonth: Bool {
+        displayedMonth < latestSelectableMonth
+    }
 
     /// 當月收入合計。
     private(set) var monthlyIncome = 0
@@ -82,19 +112,47 @@ final class HomeViewModel {
         refreshGeneration += 1
         let generation = refreshGeneration
 
-        displayedMonth = date
+        do {
+            let currentMonth = try useCase.startOfMonth(containing: now())
+            let requestedMonth = try useCase.startOfMonth(containing: date)
+
+            displayedMonth = requestedMonth
+            earliestSelectableMonth = min(earliestSelectableMonth, currentMonth)
+            latestSelectableMonth = max(latestSelectableMonth, currentMonth)
+        } catch {
+            resetMonthlyContent()
+            loadState = .failed
+            return
+        }
+
+        resetMonthlyContent()
         loadState = .loading
-        hasPaginationError = false
         isShowingOperationError = false
-        isLoadingNextPage = false
-        nextCursor = nil
-        hasNextPage = false
 
         do {
-            let summary = try await useCase.fetchMonthlySummary(for: date)
+            let earliestMonth = try await useCase.fetchEarliestExpenseMonth()
+            let latestMonth = try await useCase.fetchLatestExpenseMonth()
+            try Task.checkCancellation()
+            guard generation == refreshGeneration else { return }
+
+            let currentMonth = try useCase.startOfMonth(containing: now())
+            earliestSelectableMonth = min(
+                earliestMonth ?? currentMonth,
+                currentMonth
+            )
+            latestSelectableMonth = max(
+                latestMonth ?? currentMonth,
+                currentMonth
+            )
+            displayedMonth = min(
+                max(displayedMonth, earliestSelectableMonth),
+                latestSelectableMonth
+            )
+
+            let summary = try await useCase.fetchMonthlySummary(for: displayedMonth)
             try Task.checkCancellation()
             let page = try await useCase.fetchMonthlyExpensePage(
-                for: date,
+                for: displayedMonth,
                 limit: pageSize
             )
             try Task.checkCancellation()
@@ -115,6 +173,38 @@ final class HomeViewModel {
             loadState = expenses.isEmpty ? .failed : .content
             isShowingOperationError = !expenses.isEmpty
         }
+    }
+
+    /// 切換並載入上一個可選月份。
+    func selectPreviousMonth() async {
+        guard canSelectPreviousMonth,
+              let previousMonth = try? useCase.month(
+                byAdding: -1,
+                to: displayedMonth
+              ) else {
+            return
+        }
+
+        await refresh(for: previousMonth)
+    }
+
+    /// 切換並載入下一個可選月份。
+    func selectNextMonth() async {
+        guard canSelectNextMonth,
+              let nextMonth = try? useCase.month(
+                byAdding: 1,
+                to: displayedMonth
+              ) else {
+            return
+        }
+
+        await refresh(for: nextMonth)
+    }
+
+    /// 切換並載入月份選擇器指定的月份。
+    /// - Parameter date: 使用者選擇月份內的任意日期。
+    func selectMonth(_ date: Date) async {
+        await refresh(for: date)
     }
 
     /// 當指定記帳是目前列表最後一筆時，視需要載入下一頁。
@@ -168,5 +258,17 @@ final class HomeViewModel {
             loadState = expenses.isEmpty ? .failed : .content
             isShowingOperationError = !expenses.isEmpty
         }
+    }
+
+    /// 清除上一月份的內容與分頁狀態，避免標題和舊資料不一致。
+    private func resetMonthlyContent() {
+        monthlyIncome = 0
+        monthlyExpense = 0
+        monthlyBalance = 0
+        expenses = []
+        nextCursor = nil
+        hasNextPage = false
+        isLoadingNextPage = false
+        hasPaginationError = false
     }
 }

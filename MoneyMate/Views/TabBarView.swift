@@ -61,8 +61,8 @@ struct TabBarView: View {
                     .sheet(isPresented: $isShowingAddSheet) {
                         ExpenseEditorSheet(
                             viewModel: dependencies.makeExpenseEditorViewModel(),
-                            onSave: {
-                                await dependencies.homeViewModel.refresh(for: Date())
+                            onSave: { savedDate in
+                                await dependencies.homeViewModel.selectMonth(savedDate)
                             }
                         )
                             .presentationDetents([.large])
@@ -103,7 +103,7 @@ struct TabBarView: View {
 }
 
 #if DEBUG
-#Preview("45 筆假資料") {
+#Preview("跨月與跨年假資料") {
     let container = try! MockExpenseData.makeModelContainer()
 
     TabBarView()

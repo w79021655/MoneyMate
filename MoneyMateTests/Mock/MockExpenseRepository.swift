@@ -23,6 +23,9 @@ final class MockExpenseRepository: ExpenseRepositoryProtocol {
     /// 設為 `true` 時，所有操作都會拋出 `requestedFailure`。
     var shouldFail = false
 
+    /// 依查詢月份起始時間設定延遲，用來模擬請求回傳順序交錯。
+    var fetchDelays: [Date: UInt64] = [:]
+
     /// 建立具有指定初始資料的 mock repository。
     /// - Parameter expenses: 測試開始時可查詢的記帳資料。
     init(expenses: [Expense] = []) {
@@ -50,9 +53,22 @@ final class MockExpenseRepository: ExpenseRepositoryProtocol {
     /// 模擬查詢半開日期區間 `[start, end)` 內的所有記帳。
     func fetchExpenses(in interval: DateInterval) async throws -> [Expense] {
         try throwIfNeeded()
+        try await delayIfNeeded(for: interval)
         return expenses.filter {
             $0.date >= interval.start && $0.date < interval.end
         }
+    }
+
+    /// 模擬取得所有記帳中最早的日期。
+    func fetchEarliestExpenseDate() async throws -> Date? {
+        try throwIfNeeded()
+        return expenses.map(\.date).min()
+    }
+
+    /// 模擬取得所有記帳中最晚的日期。
+    func fetchLatestExpenseDate() async throws -> Date? {
+        try throwIfNeeded()
+        return expenses.map(\.date).max()
     }
 
     /// 使用與 production repository 相同的日期與 UUID 複合順序模擬分頁。
@@ -62,6 +78,7 @@ final class MockExpenseRepository: ExpenseRepositoryProtocol {
         limit: Int
     ) async throws -> ExpensePage {
         try throwIfNeeded()
+        try await delayIfNeeded(for: interval)
 
         let sorted = expenses
             .filter { expense in
@@ -99,5 +116,11 @@ final class MockExpenseRepository: ExpenseRepositoryProtocol {
         if shouldFail {
             throw MockExpenseRepositoryError.requestedFailure
         }
+    }
+
+    /// 依測試設定暫停指定月份的查詢。
+    private func delayIfNeeded(for interval: DateInterval) async throws {
+        guard let nanoseconds = fetchDelays[interval.start] else { return }
+        try await Task.sleep(nanoseconds: nanoseconds)
     }
 }

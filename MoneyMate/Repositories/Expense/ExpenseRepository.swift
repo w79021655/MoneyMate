@@ -70,6 +70,30 @@ final class ExpenseRepository: ExpenseRepositoryProtocol {
         return try context.fetch(descriptor)
     }
 
+    /// 取得目前資料庫中最早的記帳日期。
+    /// - Returns: 最早記帳日期；沒有任何資料時回傳 `nil`。
+    /// - Throws: SwiftData fetch 失敗時拋出錯誤。
+    func fetchEarliestExpenseDate() async throws -> Date? {
+        var descriptor = FetchDescriptor<Expense>(
+            sortBy: [SortDescriptor(\Expense.date, order: .forward)]
+        )
+        descriptor.fetchLimit = 1
+
+        return try context.fetch(descriptor).first?.date
+    }
+
+    /// 取得目前資料庫中最晚的記帳日期。
+    /// - Returns: 最晚記帳日期；沒有任何資料時回傳 `nil`。
+    /// - Throws: SwiftData fetch 失敗時拋出錯誤。
+    func fetchLatestExpenseDate() async throws -> Date? {
+        var descriptor = FetchDescriptor<Expense>(
+            sortBy: [SortDescriptor(\Expense.date, order: .reverse)]
+        )
+        descriptor.fetchLimit = 1
+
+        return try context.fetch(descriptor).first?.date
+    }
+
     /// 依日期與 UUID 的反向複合順序取得一頁記帳資料。
     ///
     /// 相同 timestamp 會再依 UUID 排序，避免跨頁時遺漏或重複資料。
