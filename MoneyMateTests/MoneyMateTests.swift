@@ -19,6 +19,28 @@ struct MoneyMateTests {
         return calendar
     }()
 
+    /// 驗證畫面假資料固定產生 45 筆，並維持穩定識別與收支 convention。
+    @MainActor
+    @Test func mockExpenseDataProvidesDisplayableList() throws {
+        let referenceDate = makeDate(year: 2026, month: 7, day: 15)
+        let interval = try #require(calendar.dateInterval(of: .month, for: referenceDate))
+
+        let expenses = MockExpenseData.makeExpenses(
+            referenceDate: referenceDate,
+            calendar: calendar
+        )
+
+        #expect(expenses.count == 45)
+        #expect(Set(expenses.map(\.id)).count == 45)
+        #expect(expenses.allSatisfy { interval.contains($0.date) })
+        #expect(expenses.allSatisfy {
+            switch $0.type {
+            case .income: $0.amount > 0
+            case .expenditure: $0.amount < 0
+            }
+        })
+    }
+
     /// 驗證 repository 只使用注入的 in-memory context，並遵守月份區間。
     @MainActor
     @Test func repositoryUsesInjectedModelContextAndMonthInterval() async throws {

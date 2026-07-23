@@ -76,7 +76,7 @@
       </BuildableProductRunnable>
       <CommandLineArguments>
          <CommandLineArgument
-            argument = ""
+            argument = "-useMockData"
             isEnabled = "YES">
          </CommandLineArgument>
       </CommandLineArguments>

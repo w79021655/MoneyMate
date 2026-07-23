@@ -89,8 +89,8 @@ final class ExpenseRepository: ExpenseRepositoryProtocol {
             return ExpensePage(expenses: [], nextCursor: nil, hasMore: false)
         }
 
-        let start = interval.start
-        let end = interval.end
+        let start = interval.start // 2026-06-30 16:00:00 UTC
+        let end = interval.end // 2026-07-31 16:00:00 UTC
         let sort = [
             SortDescriptor(\Expense.date, order: .reverse),
             SortDescriptor(\Expense.id, order: .reverse)

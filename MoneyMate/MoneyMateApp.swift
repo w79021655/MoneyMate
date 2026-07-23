@@ -21,7 +21,14 @@ struct MoneyMateApp: App {
     @MainActor
     init() {
         do {
+#if DEBUG
+            let usesMockData = ProcessInfo.processInfo.arguments.contains("-useMockData")
+            let modelContainer = usesMockData
+                ? try MockExpenseData.makeModelContainer()
+                : try ModelContainer(for: Expense.self)
+#else
             let modelContainer = try ModelContainer(for: Expense.self)
+#endif
             self.modelContainer = modelContainer
             self.dependencies = AppDependencies(
                 modelContext: modelContainer.mainContext

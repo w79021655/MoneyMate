@@ -102,11 +102,9 @@ struct TabBarView: View {
     }
 }
 
-#Preview {
-    let container = try! ModelContainer(
-        for: Expense.self,
-        configurations: ModelConfiguration(isStoredInMemoryOnly: true)
-    )
+#if DEBUG
+#Preview("45 筆假資料") {
+    let container = try! MockExpenseData.makeModelContainer()
 
     TabBarView()
         .environment(
@@ -114,3 +112,4 @@ struct TabBarView: View {
         )
         .modelContainer(container)
 }
+#endif
