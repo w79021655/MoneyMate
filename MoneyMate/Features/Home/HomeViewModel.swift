@@ -18,12 +18,15 @@ enum HomeLoadState: Equatable {
     case failed
 }
 
-/// 管理首頁月份統計、交易列表、分頁與錯誤顯示狀態。
+/// 管理 Home feature 的月份統計、交易列表、分頁與錯誤顯示狀態。
 @MainActor
 @Observable
 final class HomeViewModel {
-    /// 提供首頁業務操作的 UseCase。
-    private let useCase: HomeUseCase
+    /// 提供月份區間、統計與分頁查詢。
+    private let monthlyExpenseService: MonthlyExpenseService
+
+    /// 提供首頁刪除記帳所需的 persistence 操作。
+    private let repository: any ExpenseRepositoryProtocol
 
     /// 每次分頁查詢最多載入的資料筆數。
     private let pageSize: Int
@@ -42,19 +45,22 @@ final class HomeViewModel {
 
     /// 建立首頁狀態管理器。
     /// - Parameters:
-    ///   - useCase: 首頁統計與資料操作流程。
+    ///   - monthlyExpenseService: 月份區間、統計與分頁查詢服務。
+    ///   - repository: 首頁刪除記帳使用的資料介面。
     ///   - pageSize: 單頁最多載入筆數，預設為 20。
     init(
-        useCase: HomeUseCase,
+        monthlyExpenseService: MonthlyExpenseService,
+        repository: any ExpenseRepositoryProtocol,
         pageSize: Int = 20,
         now: @escaping () -> Date = Date.init
     ) {
-        self.useCase = useCase
+        self.monthlyExpenseService = monthlyExpenseService
+        self.repository = repository
         self.pageSize = pageSize
         self.now = now
 
         let currentDate = now()
-        let currentMonth = (try? useCase.startOfMonth(containing: currentDate)) ?? currentDate
+        let currentMonth = (try? monthlyExpenseService.startOfMonth(containing: currentDate)) ?? currentDate
         self.displayedMonth = currentMonth
         self.earliestSelectableMonth = currentMonth
         self.latestSelectableMonth = currentMonth
@@ -113,8 +119,8 @@ final class HomeViewModel {
         let generation = refreshGeneration
 
         do {
-            let currentMonth = try useCase.startOfMonth(containing: now())
-            let requestedMonth = try useCase.startOfMonth(containing: date)
+            let currentMonth = try monthlyExpenseService.startOfMonth(containing: now())
+            let requestedMonth = try monthlyExpenseService.startOfMonth(containing: date)
 
             displayedMonth = requestedMonth
             earliestSelectableMonth = min(earliestSelectableMonth, currentMonth)
@@ -130,12 +136,12 @@ final class HomeViewModel {
         isShowingOperationError = false
 
         do {
-            let earliestMonth = try await useCase.fetchEarliestExpenseMonth()
-            let latestMonth = try await useCase.fetchLatestExpenseMonth()
+            let earliestMonth = try await monthlyExpenseService.fetchEarliestExpenseMonth()
+            let latestMonth = try await monthlyExpenseService.fetchLatestExpenseMonth()
             try Task.checkCancellation()
             guard generation == refreshGeneration else { return }
 
-            let currentMonth = try useCase.startOfMonth(containing: now())
+            let currentMonth = try monthlyExpenseService.startOfMonth(containing: now())
             earliestSelectableMonth = min(
                 earliestMonth ?? currentMonth,
                 currentMonth
@@ -149,9 +155,9 @@ final class HomeViewModel {
                 latestSelectableMonth
             )
 
-            let summary = try await useCase.fetchMonthlySummary(for: displayedMonth)
+            let summary = try await monthlyExpenseService.fetchMonthlySummary(for: displayedMonth)
             try Task.checkCancellation()
-            let page = try await useCase.fetchMonthlyExpensePage(
+            let page = try await monthlyExpenseService.fetchMonthlyExpensePage(
                 for: displayedMonth,
                 limit: pageSize
             )
@@ -178,7 +184,7 @@ final class HomeViewModel {
     /// 切換並載入上一個可選月份。
     func selectPreviousMonth() async {
         guard canSelectPreviousMonth,
-              let previousMonth = try? useCase.month(
+              let previousMonth = try? monthlyExpenseService.month(
                 byAdding: -1,
                 to: displayedMonth
               ) else {
@@ -191,7 +197,7 @@ final class HomeViewModel {
     /// 切換並載入下一個可選月份。
     func selectNextMonth() async {
         guard canSelectNextMonth,
-              let nextMonth = try? useCase.month(
+              let nextMonth = try? monthlyExpenseService.month(
                 byAdding: 1,
                 to: displayedMonth
               ) else {
@@ -222,7 +228,7 @@ final class HomeViewModel {
         defer { isLoadingNextPage = false }
 
         do {
-            let page = try await useCase.fetchMonthlyExpensePage(
+            let page = try await monthlyExpenseService.fetchMonthlyExpensePage(
                 for: displayedMonth,
                 after: requestedCursor,
                 limit: pageSize
@@ -252,7 +258,7 @@ final class HomeViewModel {
     /// - Parameter expense: 要刪除的 SwiftData model。
     func delete(_ expense: Expense) async {
         do {
-            try await useCase.deleteExpense(expense.persistentModelID)
+            try await repository.deleteByPersistentId(expense.persistentModelID)
             await refresh(for: displayedMonth)
         } catch {
             loadState = expenses.isEmpty ? .failed : .content

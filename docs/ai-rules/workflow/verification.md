@@ -14,7 +14,7 @@
 | --- | --- |
 | Markdown、規則、純註解 | 檢查 diff、文件連結與語言一致性 |
 | Model、formatter、helper | 對應 targeted Unit Test |
-| ViewModel、UseCase | 對應 targeted Unit Test，涵蓋主要狀態與邊界 |
+| Feature Model、ViewModel、Service | 對應 targeted Unit Test，涵蓋主要狀態與邊界 |
 | Repository、SwiftData | in-memory persistence test 與相關 build |
 | SwiftUI layout 或樣式 | App build，加上 preview、simulator 或手動 smoke test |
 | Navigation、sheet、互動流程 | App build，加上 UI Test 或手動流程驗證 |

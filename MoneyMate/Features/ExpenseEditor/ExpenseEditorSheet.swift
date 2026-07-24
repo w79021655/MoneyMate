@@ -8,27 +8,28 @@
 import SwiftUI
 import SwiftData
 
-/// 顯示新增記帳表單，並在儲存成功後通知呼叫端刷新資料。
+/// 顯示 ExpenseEditor feature 的新增記帳表單，並在儲存成功後通知呼叫端刷新資料。
 struct ExpenseEditorSheet: View {
     @Environment(\.dismiss) private var dismiss
-    @State private var viewModel: ExpenseEditorViewModel
+    @State private var model: ExpenseEditorModel
     @State private var showCategorySheet = false
+
     private let onSave: @MainActor (Date) async -> Void
 
-    /// 建立使用指定草稿狀態的新增記帳表單。
+    /// 建立使用指定 Model 的新增記帳畫面。
     /// - Parameters:
-    ///   - viewModel: 此次編輯流程專用的表單 ViewModel。
+    ///   - model: 此次新增流程的草稿、儲存與錯誤狀態。
     ///   - onSave: Repository 儲存成功後、關閉 sheet 前執行的非同步操作。
     init(
-        viewModel: ExpenseEditorViewModel,
+        model: ExpenseEditorModel,
         onSave: @escaping @MainActor (Date) async -> Void = { _ in }
     ) {
-        _viewModel = State(initialValue: viewModel)
+        _model = State(initialValue: model)
         self.onSave = onSave
     }
 
     var body: some View {
-        @Bindable var viewModel = viewModel
+        @Bindable var model = model
 
         VStack {
             Button {
@@ -38,20 +39,20 @@ struct ExpenseEditorSheet: View {
                 UIImpactFeedbackGenerator(style: .light).impactOccurred()
             } label: {
                 ExpenseEditorHeaderView(
-                    amount: $viewModel.amount,
-                    selectedCategory: $viewModel.category
+                    amount: model.draft.amount,
+                    selectedCategory: model.draft.category
                 )
             }
             .buttonStyle(.plain)
-            .accessibilityLabel("選擇分類，目前為\(viewModel.category.rawValue)")
+            .accessibilityLabel("選擇分類，目前為\(model.draft.category.rawValue)")
 
             Form {
                 Section(header: Text("")) {
-                    TextField("輸入金額", text: $viewModel.amountText)
+                    TextField("輸入金額", text: $model.draft.amountText)
                         .keyboardType(.numberPad)
                 }
 
-                DatePicker(selection: $viewModel.date,
+                DatePicker(selection: $model.draft.date,
                            displayedComponents: [.date, .hourAndMinute]) {
                     Label {
                         Text("日期")
@@ -72,7 +73,7 @@ struct ExpenseEditorSheet: View {
                         .font(Font.bodyMedium)
                         .foregroundStyle(Color.Text.primary)
                     Spacer()
-                    Picker("選擇類型", selection: $viewModel.type) {
+                    Picker("選擇類型", selection: $model.draft.type) {
                         Text("支出")
                             .tag(TransactionType.expenditure)
                             .font(Font.bodyMedium)
@@ -90,24 +91,21 @@ struct ExpenseEditorSheet: View {
                     Text("備註")
                         .font(Font.bodyMedium)
                         .foregroundStyle(Color.Text.primary)
-                    TextField("", text: $viewModel.remark)
+                    TextField("", text: $model.draft.remark)
                         .font(Font.bodyMedium)
                 }
             }
 
             Button {
                 Task {
-                    if await viewModel.createExpense() {
-                        await onSave(viewModel.date)
-                        dismiss()
-                    }
+                    await save()
                 }
             } label: {
                 ZStack {
                     Text("儲存")
-                        .opacity(viewModel.isSaving ? 0 : 1)
+                        .opacity(model.isSaving ? 0 : 1)
 
-                    if viewModel.isSaving {
+                    if model.isSaving {
                         ProgressView()
                             .tint(.white)
                             .accessibilityLabel("儲存中")
@@ -124,27 +122,36 @@ struct ExpenseEditorSheet: View {
                 .shadow(color: Color.Text.primary.opacity(0.15), radius: 16, x: 0, y: 1)
             }
             .padding(.horizontal, 15)
-            .disabled(!viewModel.canSubmit || viewModel.isSaving)
-            .opacity(viewModel.canSubmit && !viewModel.isSaving ? 1 : 0.5)
+            .disabled(!model.draft.canSubmit || model.isSaving)
+            .opacity(model.draft.canSubmit && !model.isSaving ? 1 : 0.5)
         }
         .sheet(isPresented: $showCategorySheet) {
-            CategoryEditorSheet(selectedCategory: $viewModel.category,
+            CategoryEditorSheet(selectedCategory: $model.draft.category,
                                 title: "支出")
                 .presentationDetents([.medium])
                 .presentationCornerRadius(16)
         }
-        .alert("無法儲存", isPresented: $viewModel.isShowingSaveError) {
+        .alert("無法儲存", isPresented: $model.isShowingSaveError) {
             Button("好", role: .cancel) {}
         } message: {
             Text("資料尚未儲存，請稍後再試。")
         }
     }
+
+    /// 要求 Model 儲存草稿，成功後刷新首頁並關閉 sheet。
+    @MainActor
+    private func save() async {
+        guard let savedDate = await model.save() else { return }
+
+        await onSave(savedDate)
+        dismiss()
+    }
 }
 
 /// 顯示目前分類與尚未套用收支正負號的輸入金額。
 struct ExpenseEditorHeaderView: View {
-    @Binding var amount: Int?
-    @Binding var selectedCategory: Category
+    let amount: Int?
+    let selectedCategory: Category
 
     var body: some View {
         VStack(alignment: .leading,
@@ -186,7 +193,7 @@ struct ExpenseEditorHeaderView: View {
     let repository = ExpenseRepository(context: container.mainContext)
 
     ExpenseEditorSheet(
-        viewModel: ExpenseEditorViewModel(repository: repository)
+        model: ExpenseEditorModel(repository: repository)
     )
     .modelContainer(container)
 }

@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-/// 顯示所有記帳分類，並將使用者選擇回寫至呼叫端 binding。
+/// 顯示 ExpenseEditor feature 的所有記帳分類，並將使用者選擇回寫至呼叫端 binding。
 struct CategoryEditorSheet: View {
     @Binding var selectedCategory: Category
     let title: String

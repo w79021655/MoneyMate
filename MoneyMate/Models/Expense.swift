@@ -9,7 +9,7 @@ import Foundation
 import SwiftData
 import SwiftUI
 
-/// 表示一筆持久化的收入或支出紀錄。
+/// 表示跨 feature 共用的一筆持久化收入或支出紀錄。
 @Model
 class Expense: Identifiable, Equatable, Decodable {
 

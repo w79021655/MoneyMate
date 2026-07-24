@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-/// 顯示目前月份的餘額、收入與支出摘要。
+/// 顯示 Home feature 目前月份的餘額、收入與支出摘要。
 struct HomeHeaderView: View {
     @State private var isShowingMonthPicker = false
 

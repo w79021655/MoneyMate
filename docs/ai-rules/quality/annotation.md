@@ -25,7 +25,7 @@
 以下內容使用 DocC 註解：
 
 1. 對其他型別提供 contract 的 `class`、`struct`、`enum`、`protocol` 與 extension。
-2. ViewModel、UseCase、Repository、service 與 domain model 等具有架構責任的型別。
+2. Feature Model、ViewModel、Service、Repository 與 domain model 等具有架構責任的型別。
 3. 對外 API、protocol requirement、業務邏輯方法與不容易從 signature 理解的方法。
 4. 具有重要語意的 property，例如金額單位、時間區間、cache、repository 或 persistence dependency。
 
@@ -51,7 +51,7 @@
 ```swift
 /// 管理首頁的月統計與交易列表狀態。
 ///
-/// 透過 `HomeUseCase` 取得資料，並在 Main Actor 更新畫面狀態。
+/// 透過 `MonthlyExpenseService` 與 Repository 取得資料，並在 Main Actor 更新畫面狀態。
 @MainActor
 final class HomeViewModel { }
 ```

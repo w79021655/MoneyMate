@@ -60,7 +60,7 @@ struct TabBarView: View {
                     .accessibilityLabel("新增記帳")
                     .sheet(isPresented: $isShowingAddSheet) {
                         ExpenseEditorSheet(
-                            viewModel: dependencies.makeExpenseEditorViewModel(),
+                            model: dependencies.makeExpenseEditorModel(),
                             onSave: { savedDate in
                                 await dependencies.homeViewModel.selectMonth(savedDate)
                             }

@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-/// 顯示單筆記帳的日期、分類、備註、金額與內容選單操作。
+/// 顯示 Home feature 單筆記帳的日期、分類、備註、金額與內容選單操作。
 struct TransactionRowView: View {
     let expense: Expense
     let onDelete: EmptyClosure

@@ -116,7 +116,7 @@ struct MoneyMateTests {
 
     /// 驗證月統計涵蓋當月全部資料，且不受 repository 分頁大小影響。
     @MainActor
-    @Test func homeUseCaseCalculatesAllRecordsInRequestedMonth() async throws {
+    @Test func monthlyExpenseServiceCalculatesAllRecordsInRequestedMonth() async throws {
         let januaryDate = makeDate(year: 2026, month: 1, day: 15)
         let februaryDate = makeDate(year: 2026, month: 2, day: 1)
         let januaryExpenses = (0..<25).map { index in
@@ -128,9 +128,9 @@ struct MoneyMateTests {
         let repository = MockExpenseRepository(
             expenses: januaryExpenses + [makeExpense(amount: 10_000, date: februaryDate)]
         )
-        let useCase = HomeUseCase(repository: repository, calendar: calendar)
+        let service = MonthlyExpenseService(repository: repository, calendar: calendar)
 
-        let result = try await useCase.fetchMonthlySummary(for: januaryDate)
+        let result = try await service.fetchMonthlySummary(for: januaryDate)
 
         #expect(result.income == 1_300)
         #expect(result.expense == -480)
@@ -139,13 +139,13 @@ struct MoneyMateTests {
 
     /// 驗證月份運算會正規化月底日期，並能正確跨年。
     @MainActor
-    @Test func homeUseCaseNormalizesAndOffsetsMonthsAcrossYears() throws {
+    @Test func monthlyExpenseServiceNormalizesAndOffsetsMonthsAcrossYears() throws {
         let repository = MockExpenseRepository()
-        let useCase = HomeUseCase(repository: repository, calendar: calendar)
+        let service = MonthlyExpenseService(repository: repository, calendar: calendar)
         let decemberEnd = makeDate(year: 2025, month: 12, day: 31)
 
-        let decemberStart = try useCase.startOfMonth(containing: decemberEnd)
-        let januaryStart = try useCase.month(byAdding: 1, to: decemberEnd)
+        let decemberStart = try service.startOfMonth(containing: decemberEnd)
+        let januaryStart = try service.month(byAdding: 1, to: decemberEnd)
 
         #expect(decemberStart == makeDate(year: 2025, month: 12, day: 1))
         #expect(januaryStart == makeDate(year: 2026, month: 1, day: 1))
@@ -153,11 +153,11 @@ struct MoneyMateTests {
 
     /// 驗證非 UTC 時區仍使用注入 Calendar 建立正確的月份邊界。
     @MainActor
-    @Test func homeUseCaseUsesInjectedTimeZoneForMonthBoundary() throws {
+    @Test func monthlyExpenseServiceUsesInjectedTimeZoneForMonthBoundary() throws {
         var taipeiCalendar = Calendar(identifier: .gregorian)
         taipeiCalendar.timeZone = TimeZone(identifier: "Asia/Taipei")!
         let repository = MockExpenseRepository()
-        let useCase = HomeUseCase(
+        let service = MonthlyExpenseService(
             repository: repository,
             calendar: taipeiCalendar
         )
@@ -166,7 +166,7 @@ struct MoneyMateTests {
             from: DateComponents(year: 2026, month: 1, day: 1)
         )
 
-        #expect(try useCase.startOfMonth(containing: date) == expected)
+        #expect(try service.startOfMonth(containing: date) == expected)
     }
 
     /// 驗證相同 timestamp 的資料可透過複合 cursor 完整分頁且不重複。
@@ -208,8 +208,11 @@ struct MoneyMateTests {
     @Test func homeViewModelExposesFailureState() async {
         let repository = MockExpenseRepository()
         repository.shouldFail = true
-        let useCase = HomeUseCase(repository: repository, calendar: calendar)
-        let viewModel = HomeViewModel(useCase: useCase)
+        let service = MonthlyExpenseService(repository: repository, calendar: calendar)
+        let viewModel = HomeViewModel(
+            monthlyExpenseService: service,
+            repository: repository
+        )
 
         await viewModel.refresh(for: makeDate(year: 2026, month: 1, day: 15))
 
@@ -225,9 +228,10 @@ struct MoneyMateTests {
             makeExpense(amount: 100, date: januaryDate),
             makeExpense(amount: -40, date: marchDate)
         ])
-        let useCase = HomeUseCase(repository: repository, calendar: calendar)
+        let service = MonthlyExpenseService(repository: repository, calendar: calendar)
         let viewModel = HomeViewModel(
-            useCase: useCase,
+            monthlyExpenseService: service,
+            repository: repository,
             now: { marchDate }
         )
 
@@ -255,9 +259,10 @@ struct MoneyMateTests {
     @Test func homeViewModelUsesCurrentMonthAsOnlyBoundWhenEmpty() async {
         let currentDate = makeDate(year: 2026, month: 7, day: 23)
         let repository = MockExpenseRepository()
-        let useCase = HomeUseCase(repository: repository, calendar: calendar)
+        let service = MonthlyExpenseService(repository: repository, calendar: calendar)
         let viewModel = HomeViewModel(
-            useCase: useCase,
+            monthlyExpenseService: service,
+            repository: repository,
             now: { currentDate }
         )
 
@@ -274,9 +279,10 @@ struct MoneyMateTests {
         let currentDate = makeDate(year: 2026, month: 7, day: 23)
         let futureDate = makeDate(year: 2027, month: 2, day: 5)
         let repository = MockExpenseRepository()
-        let useCase = HomeUseCase(repository: repository, calendar: calendar)
+        let service = MonthlyExpenseService(repository: repository, calendar: calendar)
         let viewModel = HomeViewModel(
-            useCase: useCase,
+            monthlyExpenseService: service,
+            repository: repository,
             now: { currentDate }
         )
 
@@ -303,9 +309,10 @@ struct MoneyMateTests {
             makeExpense(amount: 80, date: historicalDate),
             makeExpense(amount: -120, date: futureDate)
         ])
-        let useCase = HomeUseCase(repository: repository, calendar: calendar)
+        let service = MonthlyExpenseService(repository: repository, calendar: calendar)
         let viewModel = HomeViewModel(
-            useCase: useCase,
+            monthlyExpenseService: service,
+            repository: repository,
             now: { currentDate }
         )
 
@@ -332,9 +339,10 @@ struct MoneyMateTests {
             makeExpense(amount: 250, date: februaryDate)
         ])
         repository.fetchDelays[januaryStart] = 100_000_000
-        let useCase = HomeUseCase(repository: repository, calendar: calendar)
+        let service = MonthlyExpenseService(repository: repository, calendar: calendar)
         let viewModel = HomeViewModel(
-            useCase: useCase,
+            monthlyExpenseService: service,
+            repository: repository,
             now: { februaryDate }
         )
 
@@ -356,9 +364,10 @@ struct MoneyMateTests {
         let repository = MockExpenseRepository(expenses: [
             makeExpense(amount: 100, date: currentDate)
         ])
-        let useCase = HomeUseCase(repository: repository, calendar: calendar)
+        let service = MonthlyExpenseService(repository: repository, calendar: calendar)
         let viewModel = HomeViewModel(
-            useCase: useCase,
+            monthlyExpenseService: service,
+            repository: repository,
             now: { currentDate }
         )
 
@@ -379,9 +388,10 @@ struct MoneyMateTests {
         let currentDate = makeDate(year: 2026, month: 7, day: 23)
         let historicalDate = makeDate(year: 2025, month: 11, day: 5)
         let repository = MockExpenseRepository()
-        let useCase = HomeUseCase(repository: repository, calendar: calendar)
+        let service = MonthlyExpenseService(repository: repository, calendar: calendar)
         let viewModel = HomeViewModel(
-            useCase: useCase,
+            monthlyExpenseService: service,
+            repository: repository,
             now: { currentDate }
         )
 
@@ -396,36 +406,81 @@ struct MoneyMateTests {
         #expect(viewModel.monthlyExpense == -80)
     }
 
-    /// 驗證新增表單允許儲存未來日期，不額外套用日期上限。
+    /// 驗證新增草稿允許建立未來日期的記帳，不額外套用日期上限。
     @MainActor
-    @Test func editorAllowsFutureExpenseDate() async {
-        let repository = MockExpenseRepository()
+    @Test func expenseDraftAllowsFutureExpenseDate() throws {
         let futureDate = makeDate(year: 2030, month: 12, day: 15)
-        let viewModel = ExpenseEditorViewModel(repository: repository)
-        viewModel.amountText = "500"
-        viewModel.remark = "預先登記"
-        viewModel.date = futureDate
+        var draft = ExpenseDraft()
+        draft.amountText = "500"
+        draft.remark = "預先登記"
+        draft.date = futureDate
 
-        let succeeded = await viewModel.createExpense()
+        let expense = try #require(draft.makeExpense())
 
-        #expect(succeeded)
-        #expect(repository.expenses.first?.date == futureDate)
+        #expect(expense.amount == -500)
+        #expect(expense.date == futureDate)
     }
 
-    /// 驗證編輯器儲存失敗時顯示錯誤，且不宣告成功或新增資料。
+    /// 驗證草稿需要正整數金額與非空白備註才可建立記帳。
     @MainActor
-    @Test func editorReportsSaveFailureWithoutClaimingSuccess() async {
+    @Test func expenseDraftRejectsInvalidInput() {
+        var draft = ExpenseDraft()
+        draft.amountText = "0"
+        draft.remark = "   "
+
+        #expect(!draft.canSubmit)
+        #expect(draft.makeExpense() == nil)
+
+        draft.amountText = "500"
+        draft.remark = "測試"
+
+        #expect(draft.canSubmit)
+        #expect(draft.makeExpense()?.amount == -500)
+    }
+
+    /// 驗證新增記帳 Model 會透過注入的 Repository 儲存有效草稿。
+    @MainActor
+    @Test func expenseEditorModelSavesValidDraft() async throws {
+        let repository = MockExpenseRepository()
+        let savedDate = makeDate(year: 2026, month: 7, day: 24)
+        var draft = ExpenseDraft()
+        draft.amountText = "500"
+        draft.remark = "測試"
+        draft.date = savedDate
+        let model = ExpenseEditorModel(
+            repository: repository,
+            draft: draft
+        )
+
+        let result = await model.save()
+
+        #expect(result == savedDate)
+        #expect(repository.expenses.count == 1)
+        #expect(repository.expenses.first?.amount == -500)
+        #expect(!model.isSaving)
+        #expect(!model.isShowingSaveError)
+    }
+
+    /// 驗證 Repository 儲存失敗時 Model 保留草稿並公開錯誤狀態。
+    @MainActor
+    @Test func expenseEditorModelReportsSaveFailure() async {
         let repository = MockExpenseRepository()
         repository.shouldFail = true
-        let viewModel = ExpenseEditorViewModel(repository: repository)
-        viewModel.amountText = "500"
-        viewModel.remark = "測試"
+        var draft = ExpenseDraft()
+        draft.amountText = "500"
+        draft.remark = "測試"
+        let model = ExpenseEditorModel(
+            repository: repository,
+            draft: draft
+        )
 
-        let succeeded = await viewModel.createExpense()
+        let result = await model.save()
 
-        #expect(!succeeded)
-        #expect(viewModel.isShowingSaveError)
+        #expect(result == nil)
         #expect(repository.expenses.isEmpty)
+        #expect(model.draft == draft)
+        #expect(!model.isSaving)
+        #expect(model.isShowingSaveError)
     }
 
     /// 使用測試固定的 calendar 建立日期。

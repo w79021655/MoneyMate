@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-/// 組合首頁摘要與內容區，並負責啟動首次月份載入。
+/// 組合 Home feature 的摘要與內容區，並負責啟動首次月份載入。
 struct HomeView: View {
     private let viewModel: HomeViewModel
     private let onAddExpense: EmptyClosure

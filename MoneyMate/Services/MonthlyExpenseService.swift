@@ -1,12 +1,11 @@
 //
-//  HomeUseCase.swift
+//  MonthlyExpenseService.swift
 //  MoneyMate
 //
 //  Created by 吳駿 on 2025/5/17.
 //
 
 import Foundation
-import SwiftData
 
 /// 封裝單一月份的收入、支出與衍生餘額。
 struct MonthlySummary: Equatable {
@@ -21,13 +20,13 @@ struct MonthlySummary: Equatable {
 }
 
 /// 表示首頁業務流程無法建立有效月份區間的錯誤。
-enum HomeUseCaseError: Error {
+enum MonthlyExpenseServiceError: Error {
     case invalidMonthInterval
 }
 
-/// 協調首頁月份統計、分頁查詢與刪除記帳的業務流程。
+/// 提供月份區間、統計與分頁查詢，讓畫面狀態不必承擔日期與統計規則。
 @MainActor
-final class HomeUseCase {
+final class MonthlyExpenseService {
     /// 提供記帳 persistence 操作的資料介面。
     private let repository: any ExpenseRepositoryProtocol
 
@@ -111,7 +110,7 @@ final class HomeUseCase {
     /// - Returns: 由注入 Calendar 計算的月份起始時間。
     func startOfMonth(containing date: Date) throws -> Date {
         guard let interval = calendar.dateInterval(of: .month, for: date) else {
-            throw HomeUseCaseError.invalidMonthInterval
+            throw MonthlyExpenseServiceError.invalidMonthInterval
         }
 
         return interval.start
@@ -125,23 +124,16 @@ final class HomeUseCase {
     func month(byAdding value: Int, to date: Date) throws -> Date {
         let month = try startOfMonth(containing: date)
         guard let shiftedDate = calendar.date(byAdding: .month, value: value, to: month) else {
-            throw HomeUseCaseError.invalidMonthInterval
+            throw MonthlyExpenseServiceError.invalidMonthInterval
         }
 
         return try startOfMonth(containing: shiftedDate)
     }
 
-    /// 刪除指定 persistent identifier 的記帳。
-    /// - Parameter id: 要刪除的 SwiftData identifier。
-    /// - Throws: Repository 無法完成刪除時拋出錯誤。
-    func deleteExpense(_ id: PersistentIdentifier) async throws {
-        try await repository.deleteByPersistentId(id)
-    }
-
     /// 建立包含指定日期的半開月份區間 `[start, end)`。
     /// - Parameter date: 用來定位月份的基準日期。
     /// - Returns: 由注入 calendar 計算的完整月份區間。
-    /// - Throws: Calendar 無法建立月份區間時拋出 `HomeUseCaseError.invalidMonthInterval`。
+    /// - Throws: Calendar 無法建立月份區間時拋出 `MonthlyExpenseServiceError.invalidMonthInterval`。
     private func monthInterval(containing date: Date) throws -> DateInterval {
         let start = try startOfMonth(containing: date)
         let end = try month(byAdding: 1, to: start)

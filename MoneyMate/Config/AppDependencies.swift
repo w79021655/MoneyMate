@@ -11,7 +11,7 @@ import SwiftData
 @Observable
 final class AppDependencies {
     /// App 生命週期內共用的支出資料存取介面。
-    let expenseRepository: ExpenseRepository
+    private let expenseRepository: ExpenseRepository
 
     /// 首頁共用的畫面狀態與使用者操作入口。
     let homeViewModel: HomeViewModel
@@ -23,13 +23,16 @@ final class AppDependencies {
 
         self.expenseRepository = expenseRepository
         self.homeViewModel = HomeViewModel(
-            useCase: HomeUseCase(repository: expenseRepository)
+            monthlyExpenseService: MonthlyExpenseService(
+                repository: expenseRepository
+            ),
+            repository: expenseRepository
         )
     }
 
-    /// 建立一份不與其他編輯流程共用草稿狀態的 ViewModel。
-    /// - Returns: 使用 App 共用 repository 的全新 `ExpenseEditorViewModel`。
-    func makeExpenseEditorViewModel() -> ExpenseEditorViewModel {
-        ExpenseEditorViewModel(repository: expenseRepository)
+    /// 建立一個不與其他編輯流程共用草稿狀態的 Model。
+    /// - Returns: 使用 App 共用 Repository 的全新 `ExpenseEditorModel`。
+    func makeExpenseEditorModel() -> ExpenseEditorModel {
+        ExpenseEditorModel(repository: expenseRepository)
     }
 }

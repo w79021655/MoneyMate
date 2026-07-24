@@ -5,7 +5,7 @@
 1. 金額不得使用 `Double` 或 `Float`。
 2. 延續現有 `Int` 金額模型前，先確認單位是元或最小貨幣單位，不得自行推測。
 3. 若支援多幣別或小數貨幣，需明確定義 currency code、scale 與 rounding policy，再評估 `Decimal` 或最小貨幣單位。
-4. 收入與支出的正負號 convention 必須保持一致；轉換位置集中於 domain 或 UseCase，不散落在 View。
+4. 收入與支出的正負號 convention 必須保持一致；轉換位置集中於 domain 或 Service，不散落在 View。
 5. 格式化使用 locale-aware `FormatStyle`，不以字串串接手動加入貨幣符號與千分位。
 6. 加總、餘額、分類統計與輸入驗證不得放在 SwiftUI View。
 

@@ -16,8 +16,8 @@
 
 ## 測試層級
 
-1. ViewModel：測試 loading、empty、error、success、重複請求與取消。
-2. UseCase：測試業務規則、邊界、資料整合與 side effect。
+1. Feature Model／ViewModel：測試 loading、empty、error、success，以及適用的重複請求與取消。
+2. Service：測試業務規則、邊界、資料整合與 side effect。
 3. Repository：測試 insert、fetch、sort、pagination、delete、failure 與 isolation。
 4. 記帳 domain：測試收入、支出、餘額、跨月、同時間資料與空資料。
 5. Bug fix：可行時加入能先失敗、修正後通過的 regression test。
